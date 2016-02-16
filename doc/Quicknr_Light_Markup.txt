@@ -1,0 +1,71 @@
+
+                    QLM - Quicknr Light Markup
+
+To start creating a web page, type the page title, up to 80 characters
+long. Indent the title 2 or more spaces from the left margin.
+
+The title is mandatory for news pages, and should not be preceded with 
+a date. The date will be created automatically in news pages.
+
+Surround the title with square brackets if it should appear in the 
+browser window bar only, not in the page. [Home], for example.
+
+Press Return twice after the title, and start typing the body text 
+of the page, with no indent. Separate paragraphs with empty lines.
+
+For short and simple news updates on your website, that is all you need 
+to know. HTML and CSS code will take care of the rest. Read on, if you 
+want to learn about text styling, linking and lists.
+
+Words and phrases can be *made bold* by surrounding them with asterisk 
+(*) characters, _italic_ with underscores (_), or `monospaced` with 
+backticks (`). No spaces in between, this won't work: * mistake *.
+
+You can divide the page into sections with headings (one level, no
+sub-headings). As with titles, indent headings 2 or more spaces:
+
+                          Heading
+
+To create a link, place the URL in square brackets and precede it 
+with the linked text: [Google https://www.google.com]. External links 
+must begin with "www." or "http".
+
+If the URL links to an image - ".jpg", ".png", ".gif", or ".svg" - the 
+image will be displayed, and the preceding text will be its caption:
+
+[Cat taking a selfie www.cool-cat-pix.com/selfie.jpg]
+
+To link to one of your own images, enter its filepath, relative to the 
+eventual HTML document, as the URL. In the following example, the image 
+has the correct path if used in a WPTS news page:
+
+[On the beach news/images/holiday.jpg] For things to flow nicely on the 
+page, image links must be in their own paragraphs (cat image above) or 
+at the beginning of a paragraph of text (holiday image here).
+
+For the image to act as a link, immediately follow the image link with 
+the link you want it to point to, no space in between:
+
+[Click to enlarge res/img/thumbs/mypic.jpg][res/img/mypic-large.jpg]
+
+YouTube videos are easy to display, with a link on its own:
+
+[www.youtube.com/embed/video]
+
+Unordered lists - flat, not nested, one line per item - are also easy: 
+
+* List item one
+* Another list item
+* Third item
+
+Numbered lists in this format will be recognized and converted too.
+
+Note:
+A paragraph beginning with "Note:" will appear as a separate, styled 
+block. There can be a single line break after the double-colon ":", as 
+in this example, but not an empty line, which would make it a separate 
+HTML paragraph. Any word can be used instead of "Note".
+
+HTML markup is not supported, it will be treated as literal text.
+
+And that is all there is to it. Could this be any simpler?
