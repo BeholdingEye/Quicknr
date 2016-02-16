@@ -1,0 +1,384 @@
+########################################################################
+#                                                                      #
+#                             ===========                              #
+#                             PREFERENCES                              #
+#                             ===========                              #
+#                                                                      #
+#  Set the values in this file to configure this website. The whole    #
+#  "config" folder is copied from the global Quicknr folder when the   #
+#  website is created. So whatever changes you make to the             #
+#  configuration there will propagate to new websites.                 #
+#                                                                      #
+########################################################################
+#                                                                      #
+#                             HTML TITLE                               #
+#                                                                      #
+#  You have a choice of using the website name and page title in the   #
+#  HTML <title> tag together, or just one of them. You can also set    #
+#  the separator between them. Default website name is provided, but   #
+#  you are expected to change it. The default title is expected to be  #
+#  overriden by titles in source documents.                            #
+#                                                                      #
+#  HTML_TITLE:                                                         #
+#                                                                      #
+#  * Website name and page title (default): WEBSITE-PAGE               #
+#  * Website name only: WEBSITE                                        #
+#  * Page title only: PAGE                                             #
+#                                                                      #
+#  Other settings:                                                     #
+#                                                                      #
+#  * Website name and page title separator (default): " / "            #
+#  * Website name (default): "Quicknr"                                 #
+#  * Page title (default): "Test Page"                                 #
+#                                                                      #
+HTML_TITLE: WEBSITE-PAGE
+HTML_TITLE_SEPARATOR: " / "
+HTML_WEBSITE_NAME: "Quicknr"
+HTML_PAGE_TITLE: "Test Page"
+
+########################################################################
+#                                                                      #
+#                           QLM OR MARKDOWN                            #
+#                                                                      #
+#  Quicknr features its own Light Markup syntax (QLM) for easy plain   #
+#  text formatting of web page ".txt" source files.                    #
+#                                                                      #
+#  If you prefer Markdown and have the Markdown module installed, you  #
+#  may switch to it with the following setting. Valid values are QLM   #
+#  and MARKDOWN, QLM being the default.                                #
+#                                                                      #
+#  Regardless of this setting, if the Markdown module is available,    #
+#  Markdown will be used for conversion of source files with the       #
+#  ".mdml" file extension. This way you can have both: with QLM as     #
+#  the setting, ".txt" sources will be converted using QLM, and        #
+#  ".mdml" sources with the Markdown module.                           #
+#                                                                      #
+#  Markdown support is experimental: it is not supported in news       #
+#  pages, no reliable HTML titling is done by Quicknr and the Quicknr  #
+#  classes are not present.                                            #
+#                                                                      #
+#  A compromise titling solution is offered for Markdown sources: up   #
+#  to 80 characters of the first paragraph - without indentation - in  #
+#  the source file are read as the HTML page title. This can be        #
+#  turned off if MARKDOWN_TITLING is set to NO. The default is YES.    #
+#                                                                      #
+#  If you like the Markdown titling feature but would want to turn it  #
+#  off in some files, type one or more whitespace characters at the    #
+#  very start of the file: the titling feature expects no whitespace   #
+#  there. Then the page title will be the setting from "config.txt".   #
+#                                                                      #
+QLM_OR_MARKDOWN: QLM
+MARKDOWN_TITLING: YES
+
+########################################################################
+#                                                                      #
+#                             HTML TAG ID                              #
+#                                                                      #
+#  All DIV, P, H1, H2, IMG, IFRAME, DL, DT, DD, OL, UL, and LI tags    #
+#  that Quicknr creates from plain text sources can be individually    #
+#  identified from their 'class' values, as they are named and         #
+#  numbered in a hierarchical fashion.                                 #
+#                                                                      #
+#  Quicknr can also create serial IDs for these tags (works on         #
+#  Markdown text as well as QLM). The utility of such IDs will depend  #
+#  on whether the page is "frozen" or may change. Changes, converting  #
+#  changed source to HTML again, are likely to alter the IDs, making   #
+#  them less than worthless.                                           #
+#                                                                      #
+#  The feature is therefore turned off by default, with the value of   #
+#  NO. Enable with YES.                                                #
+#                                                                      #
+HTML_TAG_ID: NO
+
+########################################################################
+#                                                                      #
+#                       HTML PAGE FILE EXTENSION                       #
+#                                                                      #
+#  The default is ".html". Other valid values are ".php" and ".htm".   #
+#                                                                      #
+#  When converting source files from the "page_sources" folder to      #
+#  HTML files in the "public_html" folder, Quicknr will convert text   #
+#  to HTML from ".txt" and ".mdml" source files only. Sources with     #
+#  the ".html", ".php" or ".htm" extension will be combined with HTML  #
+#  head and tail snippets (see below) without any conversion, and      #
+#  will retain their file extension upon writing to the "public_html"  #
+#  folder, regardless of the setting here. Only HTML files from        #
+#  ".txt"/".mdml" sources will have their file extension set to this   #
+#  setting.                                                            #
+#                                                                      #
+PAGE_FILE_EXTENSION: ".html"
+
+########################################################################
+#                                                                      #
+#                           NEWS DATE FORMAT                           #
+#                                                                      #
+#  This preference controls formatting of the publication date that    #
+#  is inserted at the top of news pages. The formatting symbols are    #
+#  Python's own. Read the Python documentation for details.            #
+#                                                                      #
+#  Default value: "%A, %d %B %Y"                                       #
+#                                                                      #
+#  Example of a date formatted with the default value:                 #
+#    Friday, 1 January 2016                                            #
+#                                                                      #
+NEWS_DATE_FORMAT: "%A, %d %B %Y"
+
+########################################################################
+#                                                                      #
+#                          NEWS LISTING PAGE                           #
+#                                                                      #
+#  After converting the source file of a news posting to HTML,         #
+#  Quicknr will create a link to the resulting HTML file in the news   #
+#  listing file, "news.txt" in sources folder, which is then also      #
+#  converted to HTML.                                                  #
+#                                                                      #
+#  The first preference below controls the number of latest news       #
+#  items listed in the "news.txt" file. The default is 50.             #
+#                                                                      #
+#  The second preference sets the title of the news listing page. The  #
+#  default value is "Latest News".                                     #
+#                                                                      #
+#  The third preference sets the length limit of the introductory      #
+#  paragraph of a linked news item featured on the news listing page.  #
+#  Default is 300.                                                     #
+#                                                                      #
+#  The fourth preference is the link text to appear at the end of the  #
+#  blurb. Default is "More...".                                        #
+#                                                                      #
+NEWS_LIST_ITEMS: 50
+NEWS_LIST_TITLE: "Latest News"
+NEWS_BLURB_LENGTH: 300
+NEWS_MORE_PHRASE: "More..."
+
+########################################################################
+#                                                                      #
+#                           INDENT HTML TREE                           #
+#                                                                      #
+#  Quicknr uses a standard Python XML parser to nicely indent the      #
+#  HTML tree in a hierarchical manner that makes the page source code  #
+#  easier to read. However, if the parser encounters "badly formed"    #
+#  markup, it can produce broken HTML, without throwing an error. It   #
+#  also adds whitespace around tags in some cases.                     #
+#                                                                      #
+#  To avoid disappointment, the indenting is by default turned off     #
+#  with the value of NO. You can turn it on with YES.                  #
+#                                                                      #
+INDENT_HTML_TREE: NO
+
+########################################################################
+#                                                                      #
+#                             FTP SETTINGS                             #
+#                                                                      #
+#  For uploading to work, FTP_SERVER and FTP_USERNAME must be set      #
+#  here. FTP_PATH must also be set, to the server directory path from  #
+#  where HTML pages will be served (the server counterpart to the      #
+#  "public_html" folder in the website folder).                        #
+#                                                                      #
+#  FTP_ACCT is usually empty. FTP port is 21 and cannot be changed.    #
+#                                                                      #
+#  Unless you know your system is secure, you may like to leave the    #
+#  FTP_PASSWORD value empty and enter the password for each upload.    #
+#                                                                      #
+#  If you run into problems when uploading, you may be able to         #
+#  troubleshoot by setting FTP_DEBUG to 1 for moderate output          #
+#  verbosity, or 2 for full output (not recommended). The default      #
+#  value is 0, the recommended setting.                                #
+#                                                                      #
+#  FTP functionality of Quicknr may fail with unusual server setups.   #
+#                                                                      #
+FTP_SERVER: ""
+FTP_USERNAME: ""
+FTP_PASSWORD: ""
+FTP_PATH: ""
+FTP_ACCT: ""
+FTP_DEBUG: "0"
+
+########################################################################
+#                                                                      #
+#                             DEBUG ERRORS                             #
+#                                                                      #
+#  When mistakes are made or errors encountered, Quicknr responds      #
+#  with a nice printed message (usually, though not always). It may    #
+#  help debugging to see the full Python traceback more often. You     #
+#  can set that by changing this preference to YES. Default is NO.     #
+#                                                                      #
+DEBUG_ERRORS: NO
+
+########################################################################
+#                                                                      #
+#                            =============                             #
+#                            HTML SNIPPETS                             #
+#                            =============                             #
+#                                                                      #
+#  Add your code in either the HTML_HEAD or HTML_TAIL section,         #
+#  anywhere that is appropriate. Processed content of the text source  #
+#  document will be placed between these two snippets to create the    #
+#  HTML file.                                                          #
+#                                                                      #
+#  Quicknr creates tags in XHTML format, compatible with XHTML 1.0     #
+#  and HTML 5. The default snippets below are XHTML 1.0, but you can   #
+#  change that. Note that Quicknr is designed for publishing websites, #
+#  not web apps.                                                       #
+#                                                                      #
+#  When editing these snippets, be careful to not remove the  """      #
+#  quotes around the snippet.                                          #
+#                                                                      #
+#                                 PHP                                  #
+#                                                                      #
+#  PHP code can be included. So instead of this:                       #
+#                                                                      #
+#      <p>                                                             #
+#        Hello world!                                                  #
+#      </p>                                                            #
+#                                                                      #
+#  ...you can do this:                                                 #
+#                                                                      #
+#      <?php echo '<p>Hello world!</p>'; ?>                            #
+#                                                                      #
+#  ...provided that the server is configured for PHP service.          #
+#                                                                      #
+#  If you use PHP, be sure to set the PAGE_FILE_EXTENSION preference   #
+#  to ".php".                                                          #
+#                                                                      #
+#                               IMPORTS                                #
+#                                                                      #
+#  Imports are supported in the following format:                      #
+#                                                                      #
+#  @import: "file-to-import"                                           #
+#                                                                      #
+#  The import directive will be replaced by the contents of the file   #
+#  being imported. The file should reside in the "config/import/"      #
+#  directory of the website folder.                                    #
+#                                                                      #
+#  Import files must follow a naming convention: "all.txt" will        #
+#  import into all conversions. Other import names will import only    #
+#  into files with a matching name and any of the acceptable file      #
+#  extensions.                                                         #
+#                                                                      #
+#  For example, an import file named "about.txt" will import into      #
+#  HTML conversions of sources named "about.txt", "about.mdml",        #
+#  "about.html", etc., but no others.                                  #
+#                                                                      #
+#  Conversely, this means that an import file named "something.txt"    #
+#  will not import into anything if a "something.xxx" source file      #
+#  does not exist.                                                     #
+#                                                                      #
+#  To enable multiple imports into a file, import file names can be    #
+#  prefixed with an ASCII alphanumerical string and double underscore. #
+#  The underscore is doubled to avoid conflict with source names       #
+#  containing single underscores.                                      #
+#                                                                      #
+#  So you might use "h__about.txt" to import into the head snippet of  #
+#  "about.xxx" sources, and "t__about.txt" for the tail. For more      #
+#  detail, try "metas__about.txt", "csslink__about.txt",               #
+#  "footer1__about.txt", etc.                                          #
+#                                                                      #
+#  Finally, a file named "newspost.txt" (optionally with a prefix as   #
+#  detailed above) will import only into sources that reside in the    #
+#  "page_sources/news" directory of the website, regardless of their   #
+#  names.                                                              #
+#                                                                      #
+#  If more conditional granularity is required, Python functions       #
+#  should be used instead.                                             #
+#                                                                      #
+#  Recursive imports are supported; import files may contain import    #
+#  directives, as well as Python directives.                           #
+#                                                                      #
+#  By way of example, an import statement is part of the default       #
+#  HTML_HEAD snippet. The import does nothing, the "all.txt" file is   #
+#  empty except for a comment.                                         #
+#                                                                      #
+#                                PYTHON                                #
+#                                                                      #
+#  Python code is supported with function (or class) calls:            #
+#                                                                      #
+#  @python: "name-of-function"                                         #
+#                                                                      #
+#  Such a Python directive calls a function defined in the             #
+#  "config/user_functions.py" file of the website, to work on and      #
+#  output its result into completed HTML text of a source page just    #
+#  before it is written to file.                                       #
+#                                                                      #
+#  In addition to their placement in snippets, Python directives       #
+#  included in source text documents will work, as will import         #
+#  directives.                                                         #
+#                                                                      #
+#  The function must accept exactly three positional parameters:       #
+#                                                                      #
+#  1) Text of the full HTML output just before writing to file         #
+#                                                                      #
+#  2) Starting index position of the function directive in the text    #
+#                                                                      #
+#  3) Configuration dictionary holding website settings. Keys of the   #
+#     dictionary have the same names as options in the "config.txt"    #
+#     file. Some additional keys are also present: "siteDir" for       #
+#     website folder path, "siteFolder" for its folder name, and the   #
+#     self-explanatory "sourceFilePath" and "htmlFilePath" of the      #
+#     file being worked on. The dictionary is read-only.               #
+#                                                                      #
+#  The function directive is removed from the text before the call is  #
+#  made. After it has done its work, the function must return the      #
+#  processed text.                                                     #
+#                                                                      #
+#  Note that all importing is done before any of the functions are     #
+#  called. Functions are then called in sequence from top to bottom    #
+#  of the text. While the function directive of the function being     #
+#  called is removed, subsequent function directives remain in the     #
+#  text until it is their turn to be called. If an earlier function    #
+#  removes a later function directive from the text, the later         #
+#  function will not be called.                                        #
+#                                                                      #
+#  Two example functions are defined in the default Quicknr            #
+#  "user_functions.py" file, and one is called from the HTML_TAIL      #
+#  snippet: "latest_news_link", placing a link to news listings page   #
+#  in news pages.                                                      #
+#                                                                      #
+#                               ESCAPES                                #
+#                                                                      #
+#  If you need the literal "@import:" or "@python:" text in a HTML     #
+#  snippet or file, use the char reference "&#64;" instead of "@".     #
+#                                                                      #
+########################################################################
+#                                                                      #
+#                          HTML HEAD SNIPPET                           #
+#                                                                      #
+#  HTML code from the doctype declaration to the beginning of page     #
+#  content.                                                            #
+#                                                                      #
+HTML_HEAD: """
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="" />
+<meta name="keywords" content="" />
+<meta name="author" content="" />
+<link rel="canonical" href="" />
+<title></title>
+<link rel="shortcut icon" href="res/img/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" href="res/img/appleicon.png" />
+<link rel="stylesheet" href="res/css/main.css" type="text/css" />
+<script src="res/js/main.js" type="text/javascript">
+<!--
+// -->
+</script>
+</head>
+<body>
+<div class="page">
+@import: "all.txt"
+"""
+
+########################################################################
+#                                                                      #
+#                          HTML TAIL SNIPPET                           #
+#                                                                      #
+#  HTML code from the end of page content to the closing </html> tag.  #
+#                                                                      #
+HTML_TAIL: """
+@python: "latest_news_link"
+</div>
+</body>
+</html>
+"""
