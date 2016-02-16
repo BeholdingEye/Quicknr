@@ -1,0 +1,6 @@
+########################################################################
+#  Comments (lines that start with the # character) at the very top    #
+#  of an import file, such as this comment that you are reading, are   #
+#  ignored by the importer. All other text that you place below will   #
+#  be imported, including any later comments.                          #
+#                                                                      #
