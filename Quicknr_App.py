@@ -10,7 +10,7 @@
 #                       from plain text sources                        #
 #                                                                      #
 #                                                                      #
-#                            Version 1.0.0                             #
+#                            Version 1.1.0                             #
 #                                                                      #
 #            Copyright 2016 Karl Dolenc, beholdingeye.com.             #
 #                         All rights reserved.                         #
@@ -111,6 +111,8 @@ def Quicknr():
                     NEWS_LIST_TITLE = "Latest News",
                     NEWS_BLURB_LENGTH = "300",
                     NEWS_MORE_PHRASE = "More...",
+                    NEWS_LIST_LINK_POSITION = "END",
+                    NEWS_LIST_LINK_PREFIX = "<- ",
                     NEWS_DATE_FORMAT = "%A, %d %B %Y",
                     INDENT_HTML_TREE = "YES",
                     DEBUG_ERRORS = "NO",
@@ -165,6 +167,22 @@ def Quicknr():
         argParser.add_argument("-r","--resupload", # Bool optional argument
                             action="store_true", # Avoid None
                             help="Upload resources folder 'res'")
+        # Upload css files as well
+        argParser.add_argument("-s","--stylesupload", # Bool optional argument
+                            action="store_true", # Avoid None
+                            help="Upload css stylesheet folder 'res/css'")
+        # Upload js files as well
+        argParser.add_argument("-j","--jsupload", # Bool optional argument
+                            action="store_true", # Avoid None
+                            help="Upload javascript folder 'res/js'")
+        # Upload font files as well
+        argParser.add_argument("-f","--fontsupload", # Bool optional argument
+                            action="store_true", # Avoid None
+                            help="Upload fonts folder 'res/font'")
+        # Upload img files as well
+        argParser.add_argument("-i","--imgupload", # Bool optional argument
+                            action="store_true", # Avoid None
+                            help="Upload images folder 'res/img'")
         # Upload all contents of "public_html", including those not by Quicknr
         argParser.add_argument("-a","--allupload", # Bool optional argument
                             action="store_true", # Avoid None
@@ -446,35 +464,8 @@ def Quicknr():
         contains '@import: "file-to-import"' directives (placed there from HTML 
         head and tail snippets, or even from the source)
         
-        Import files must follow a naming convention: "all.txt" will import into
-        all conversions. Other import names will import only into files with a
-        matching name and any of the acceptable file extensions
-        
-        For example, an import file named "about.txt" will import into sources
-        named "about.txt", "about.mdml", "about.html", etc., but no others
-        
-        Conversely, this means that an import file named "something.txt" will
-        not import into anything if a "something.xxx" source file does not exist
-        
-        To enable more than one import into a file, import file names can be
-        prefixed with an ASCII alphanumerical string and double underscore
-        
-        The underscore is doubled to avoid conflict with source names containing 
-        single underscores
-        
-        So you might use "h__about.txt" to import into the head snippet of 
-        "about.xxx" sources, and "t__about.txt" for the tail. For more detail, try
-        "metas__about.txt", "csslink__about.txt", "footer1__about.txt", etc.
-        
-        Finally, a file named "newspost.txt" (optionally with a prefix as detailed
-        above) will import only into sources that reside in the "page_sources/news"
-        directory of the website, regardless of their names
-        
-        If more conditional granularity is required, Python functions should be
-        used instead
-        
-        Recursive imports are supported; import files may contain import directives
-        (as well as Python directives)
+        See the "config.txt" for details of the naming convention used by the 
+        import system
         
         """
         sys.setrecursionlimit(500) # Limit to stay safe
@@ -533,6 +524,9 @@ def Quicknr():
         except:
             _ve("NEWS_BLURB_LENGTH")
         if not CD["NEWS_MORE_PHRASE"].strip(): _ve("NEWS_MORE_PHRASE")
+        if CD["NEWS_LIST_LINK_POSITION"].strip() not in ["START", "END"]:
+            _ve("NEWS_LIST_LINK_POSITION")
+        # News list link prefix can be empty, no validation
         if not CD["NEWS_DATE_FORMAT"].strip(): _ve("NEWS_DATE_FORMAT")
         if CD["INDENT_HTML_TREE"] not in ["YES","NO"]: _ve("INDENT_HTML_TREE")
         if CD["DEBUG_ERRORS"] not in ["YES","NO"]: _ve("DEBUG_ERRORS")
@@ -583,6 +577,10 @@ def Quicknr():
             CD["NEWS_BLURB_LENGTH"] = re.search(r"(?m)^NEWS_BLURB_LENGTH:"+rP,cT).group(1)
         if re.search(r"(?m)^NEWS_MORE_PHRASE:",cT):
             CD["NEWS_MORE_PHRASE"] = re.search(r"(?m)^NEWS_MORE_PHRASE:"+rP,cT).group(1)
+        if re.search(r"(?m)^NEWS_LIST_LINK_POSITION:",cT):
+            CD["NEWS_LIST_LINK_POSITION"] = re.search(r"(?m)^NEWS_LIST_LINK_POSITION:"+rP,cT).group(1)
+        if re.search(r"(?m)^NEWS_LIST_LINK_PREFIX:",cT):
+            CD["NEWS_LIST_LINK_PREFIX"] = re.search(r"(?m)^NEWS_LIST_LINK_PREFIX:"+rP,cT).group(1)
         if re.search(r"(?m)^NEWS_DATE_FORMAT:",cT):
             CD["NEWS_DATE_FORMAT"] = re.search(r"(?m)^NEWS_DATE_FORMAT:"+rP,cT).group(1)
         if re.search(r"(?m)^INDENT_HTML_TREE:",cT):
@@ -740,9 +738,12 @@ def Quicknr():
         rT = re.sub(r"(>)`([^<]+?)`(</a>)", r"\1<code>\2</code>\3", rT)
         # Correct for styling - href/src/alt, styling not valid here
         # Three times, to catch all
-        rT = re.sub(r"((?:href|src|alt)=\")(\*|_|`)([^\"]+)\2(\")", r"\1\3\4", rT)
-        rT = re.sub(r"((?:href|src|alt)=\")(\*|_|`)([^\"]+)\2(\")", r"\1\3\4", rT)
-        rT = re.sub(r"((?:href|src|alt)=\")(\*|_|`)([^\"]+)\2(\")", r"\1\3\4", rT)
+        rT = re.sub(r"((?:href|src)=\")(\*|_|`)([^\"]+)\2(\")", r"\1\3\4", rT)
+        rT = re.sub(r"((?:href|src)=\")(\*|_|`)([^\"]+)\2(\")", r"\1\3\4", rT)
+        rT = re.sub(r"((?:href|src)=\")(\*|_|`)([^\"]+)\2(\")", r"\1\3\4", rT)
+        rT = re.sub(r"((?:alt)=\")(\*|_|`)([^\"]+)\2", r"\1\3", rT)
+        rT = re.sub(r"((?:alt)=\")(\*|_|`)([^\"]+)\2", r"\1\3", rT)
+        rT = re.sub(r"((?:alt)=\")(\*|_|`)([^\"]+)\2", r"\1\3", rT)
         
         # Correct http/www.
         rT = re.sub(r"(href|src)=\"www\.", r'\1="http://www.', rT)
@@ -896,7 +897,7 @@ def Quicknr():
                 lCount = 0 # List count
                 fRand = int(random.choice("10")) # Random control for left/right floating
                 for pT in sT.split("\n\n"):
-                    if not pT: continue
+                    if not pT.strip(): continue
                     
                     # --------------------- Link block types: link, image, video
                     if pT and pT.startswith("[") and pT.endswith("]") and \
@@ -1066,7 +1067,15 @@ def Quicknr():
         # Final wrap (penultimate actually; by default, head snippet adds <div class="page">)
         # Place file name in class for main div
         docN = os.path.splitext(os.path.basename(CD["sourceFilePath"]))[0]
-        rT = "<div class=\"user_content "+docN+"\">\n"+rT+"</div>\n"
+        # If news post, insert link to news listing, named per pref
+        hCode = ""
+        if os.path.split(os.path.dirname(CD["sourceFilePath"]))[1] == "news":
+            hCode = '<div class="news_listing_link">\n<a href="../news.html">{}{}</a>\n</div>\n'
+            hCode = hCode.format(html.escape(CD["NEWS_LIST_LINK_PREFIX"],quote=False),CD["NEWS_LIST_TITLE"])
+        if CD["NEWS_LIST_LINK_POSITION"] == "START":
+            rT = "<div class=\"user_content "+docN+"\">\n"+hCode+rT+"</div>\n"
+        else:
+            rT = "<div class=\"user_content "+docN+"\">\n"+rT+hCode+"</div>\n"
         return rT
     
     def _get_file_record_date(filePath, wT=""):
@@ -1207,8 +1216,9 @@ def Quicknr():
                         hT = eval(mo.group(1) + "(hT, " + str(mo.start()) + ", CD)")
             # Prepend links with "../" if file in news subfolder
             if os.path.split(os.path.dirname(fxNC))[1] == "news":
-                hT = re.sub(r"((?:href|src)=\")(?!(?:\.\./|http:|https:|file:|ftp:|javascript:|mailto:|#))", 
+                hT = re.sub(r"((?:href|src)=\")(?!(?:\.\./|http:|https:|file:|ftp:|javascript:|mailto:))", 
                                                                     r"\1../",hT)
+                hT = re.sub(r"((?:href|src)=\")\.\./(#)", r"\1\2", hT) # Correction (for bug?)
             # Enter IDs in DIV, P, H1-6, IMG, IFRAME, DL, DT, DD, OL, UL, and LI
             if CD["HTML_TAG_ID"] == "YES":
                 idCount = 0
@@ -1217,7 +1227,7 @@ def Quicknr():
                     nonlocal idCount
                     idCount += 1
                     return r'{} id="id{}"{}'.format(mo.group(1),idCount,mo.group(2))
-                hT = re.sub(r"(<(?:div|p|h\d|img|iframe|dl|dt|dd|ol|ul|li)(?:[ ][^>]*)*)(>)", 
+                hT = re.sub(r"(<(?:div|p|h\d|img|iframe|dl|dt|dd|ol|ul|li)(?:[ ][^>]*?)*?)(/?>)", 
                                                                     _id_generator, hT)
             
             # Indent HTML tree structure (if from ".txt" source)
@@ -1232,6 +1242,11 @@ def Quicknr():
                         hT = docType + hT
                     # Put back spaces at /> tag ends
                     hT = re.sub(r"(?<![ ])(/>)", r" \1", hT)
+                    # Remove whitespace between closing tag and punctuation
+                    hT = re.sub(r"(</[^>]+>)\s+(?=[,.?!'\"\)])", r"\1", hT)
+                    # Remove whitespace at start of <p> block 
+                    # for Chrome's handling of white-space CSS
+                    hT = re.sub(r"(<p [^>]+>)\s+", r"\1", hT)
                 except: # Fail silently
                     pass
             # Bring in <pre> code text (protected earlier)
@@ -1491,11 +1506,15 @@ def Quicknr():
     
     def _get_files_for_upload(mode):
         """
-        Returns relative paths to files in res folder
+        Returns relative paths to files in folder suggested by mode
         
         """
         if mode == "all": subPath = "public_html"
         elif mode == "res": subPath = "public_html/res"
+        elif mode == "css": subPath = "public_html/res/css"
+        elif mode == "js": subPath = "public_html/res/js"
+        elif mode == "font": subPath = "public_html/res/font"
+        elif mode == "img": subPath = "public_html/res/img"
         else: return None
         rPaths = []
         for dp, dns, fns in os.walk(os.path.join(CD["siteDir"], subPath)):
@@ -1628,9 +1647,14 @@ def Quicknr():
         if ifL: _record_news_images(ifL, qnrDataPath)
     # Ready to upload
     filesToUpload = _get_records_to_upload(qnrDataPath) # Must run, deletes nonexistent
-    if cliArgs:
-        if cliArgs.resupload: filesToUpload.extend(_get_files_for_upload("res"))
-        elif cliArgs.allupload: filesToUpload = _get_files_for_upload("all")
+    if cliArgs: # Order matters
+        if cliArgs.allupload: filesToUpload = _get_files_for_upload("all")
+        elif cliArgs.resupload: filesToUpload.extend(_get_files_for_upload("res"))
+        else:
+            if cliArgs.stylesupload: filesToUpload.extend(_get_files_for_upload("css"))
+            if cliArgs.jsupload: filesToUpload.extend(_get_files_for_upload("js"))
+            if cliArgs.fontsupload: filesToUpload.extend(_get_files_for_upload("font"))
+            if cliArgs.imgupload: filesToUpload.extend(_get_files_for_upload("img"))
     if filesToUpload:
         filesToUpload.sort()
         print(  "\n  These files will now be uploaded:\n\n    " + \
