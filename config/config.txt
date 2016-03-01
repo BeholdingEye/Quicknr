@@ -145,10 +145,19 @@ NEWS_DATE_FORMAT: "%A, %d %B %Y"
 #  The fourth preference is the link text to appear at the end of the  #
 #  blurb. Default is "More...".                                        #
 #                                                                      #
+#  The fifth preference sets the position of the link to the news      #
+#  listing page, on the news post page. Valid values are START and     #
+#  END, default being END.                                             #
+#                                                                      #
+#  The last preference sets the prefix for the news link. Default is   #
+#  "< ".                                                               #
+#                                                                      #
 NEWS_LIST_ITEMS: 50
 NEWS_LIST_TITLE: "Latest News"
 NEWS_BLURB_LENGTH: 300
 NEWS_MORE_PHRASE: "More..."
+NEWS_LIST_LINK_POSITION: END
+NEWS_LIST_LINK_PREFIX: "< "
 
 ########################################################################
 #                                                                      #
@@ -250,9 +259,10 @@ DEBUG_ERRORS: NO
 #  being imported. The file should reside in the "config/import/"      #
 #  directory of the website folder.                                    #
 #                                                                      #
-#  Import files must follow a naming convention: "all.txt" will        #
-#  import into all conversions. Other import names will import only    #
-#  into files with a matching name and any of the acceptable file      #
+#  Import files must follow a naming convention: "all.xxx" will        #
+#  import into all conversions (the file extension can be anything,    #
+#  ".txt", ".html", etc.). Other import names will import only into    #
+#  files with a matching name and any of the acceptable file           #
 #  extensions.                                                         #
 #                                                                      #
 #  For example, an import file named "about.txt" will import into      #
@@ -268,10 +278,10 @@ DEBUG_ERRORS: NO
 #  The underscore is doubled to avoid conflict with source names       #
 #  containing single underscores.                                      #
 #                                                                      #
-#  So you might use "h__about.txt" to import into the head snippet of  #
-#  "about.xxx" sources, and "t__about.txt" for the tail. For more      #
-#  detail, try "metas__about.txt", "csslink__about.txt",               #
-#  "footer1__about.txt", etc.                                          #
+#  So you might use "h__about.html" to import into the head snippet    #
+#  of "about.xxx" sources, and "t__about.html" for the tail. For more  #
+#  detail, try "metas__about.html", "csslink__about.html",             #
+#  "footer1__about.html", etc.                                         #
 #                                                                      #
 #  Finally, a file named "newspost.txt" (optionally with a prefix as   #
 #  detailed above) will import only into sources that reside in the    #
@@ -328,10 +338,9 @@ DEBUG_ERRORS: NO
 #  removes a later function directive from the text, the later         #
 #  function will not be called.                                        #
 #                                                                      #
-#  Two example functions are defined in the default Quicknr            #
-#  "user_functions.py" file, and one is called from the HTML_TAIL      #
-#  snippet: "latest_news_link", placing a link to news listings page   #
-#  in news pages.                                                      #
+#  One example function is defined in the Quicknr "user_functions.py"  #
+#  file: "page_style_link", importing matching sylesheet links into    #
+#  some pages. Adapt it to your own needs.                             #
 #                                                                      #
 #                               ESCAPES                                #
 #                                                                      #
@@ -351,6 +360,7 @@ HTML_HEAD: """
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="description" content="" />
 <meta name="keywords" content="" />
@@ -377,7 +387,6 @@ HTML_HEAD: """
 #  HTML code from the end of page content to the closing </html> tag.  #
 #                                                                      #
 HTML_TAIL: """
-@python: "latest_news_link"
 </div>
 </body>
 </html>
