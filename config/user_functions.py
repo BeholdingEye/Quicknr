@@ -30,26 +30,9 @@
 ########################################################################
 
 
-def latest_news_link(text, i, CD):
-    """
-    Imports news listing page link into news pages, taking account of CD preference
-    for the listing page name (by default "Latest News")
-    
-    """
-    hCode = """
-<div class="news_listing_link">
-<a href="../news.html">{}</a>
-</div>
-    """
-    if os.path.split(os.path.dirname(CD["sourceFilePath"]))[1] == "news":
-        hCode = hCode.format(CD["NEWS_LIST_TITLE"]).strip()+"\n"
-        return text[:i] + hCode + text[i:]    
-    else: return text
-
-
 def page_style_link(text, i, CD):
     """
-    Adds stylesheet link(s) to matching .css file(s) for some pages - adapt to 
+    Imports stylesheet link(s) to matching .css file(s) for some pages - adapt to 
     your own needs
     
     """
