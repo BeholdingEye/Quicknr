@@ -27,6 +27,17 @@ Windows, Mac and Linux.
 
 CHANGELOG
 
+Version 1.1.0 - 1 March 2016
+
+* News list link on news postings can now be positioned at start or end of page, not just the end.
+* News list link prefix now a configurable option.
+* More fine-grained commandline options for uploading of specific resource folders have been added.
+* Naming convention for import files has been improved.
+* More robust prevention of styling markup being left in "alt" attributes.
+* Bug fix for ID generator, regex used was too greedy.
+* Some whitespace fixes when HTML tree indentation is on.
+* Miscellaneous small improvements.
+
 Version 1.0.0 - 15 February 2016
 
 First public release.
