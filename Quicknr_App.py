@@ -112,7 +112,7 @@ def Quicknr():
                     NEWS_BLURB_LENGTH = "300",
                     NEWS_MORE_PHRASE = "More...",
                     NEWS_LIST_LINK_POSITION = "END",
-                    NEWS_LIST_LINK_PREFIX = "<- ",
+                    NEWS_LIST_LINK_PREFIX = "< ",
                     NEWS_DATE_FORMAT = "%A, %d %B %Y",
                     INDENT_HTML_TREE = "YES",
                     DEBUG_ERRORS = "NO",
