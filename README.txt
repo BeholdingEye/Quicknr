@@ -27,6 +27,10 @@ Windows, Mac and Linux.
 
 CHANGELOG
 
+Version 1.1.2 - 2 March 2016
+
+Version number updated in the "Quicknr_App.py" file.
+
 Version 1.1.1 - 2 March 2016
 
 Correction for a typo in a "config.txt" meta tag that resulted in badly formed XHTML.
