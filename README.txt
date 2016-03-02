@@ -27,6 +27,10 @@ Windows, Mac and Linux.
 
 CHANGELOG
 
+Version 1.1.1 - 2 March 2016
+
+Correction for a typo in a "config.txt" meta tag that resulted in badly formed XHTML.
+
 Version 1.1.0 - 1 March 2016
 
 * News list link on news postings can now be positioned at start or end of page, not just the end.
