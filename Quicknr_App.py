@@ -10,7 +10,7 @@
 #                       from plain text sources                        #
 #                                                                      #
 #                                                                      #
-#                            Version 1.2.0                             #
+#                            Version 1.2.1                             #
 #                                                                      #
 #            Copyright 2016 Karl Dolenc, beholdingeye.com.             #
 #                         All rights reserved.                         #
@@ -88,7 +88,7 @@ def Quicknr():
     
     """
     
-    print("\n===================== QUICKNR 1.0.0 =====================\n")
+    print("\n===================== QUICKNR 1.2.1 =====================\n")
     
     # --------------------- App defaults
     
@@ -114,8 +114,8 @@ def Quicknr():
                     NEWS_LIST_LINK_POSITION = "END",
                     NEWS_LIST_LINK_PREFIX = "< ",
                     NEWS_DATE_FORMAT = "%A, %d %B %Y",
-                    NEWS_PREV_LINK = "Previous",
-                    NEWS_NEXT_LINK = "Next",
+                    NEWS_PREV_LINK = "&lt; Older",
+                    NEWS_NEXT_LINK = "Newer &gt;",
                     INDENT_HTML_TREE = "YES",
                     DEBUG_ERRORS = "NO",
                     FTP_SERVER = "",
