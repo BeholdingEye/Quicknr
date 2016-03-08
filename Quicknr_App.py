@@ -10,7 +10,7 @@
 #                       from plain text sources                        #
 #                                                                      #
 #                                                                      #
-#                            Version 1.1.3                             #
+#                            Version 1.2.0                             #
 #                                                                      #
 #            Copyright 2016 Karl Dolenc, beholdingeye.com.             #
 #                         All rights reserved.                         #
@@ -114,6 +114,8 @@ def Quicknr():
                     NEWS_LIST_LINK_POSITION = "END",
                     NEWS_LIST_LINK_PREFIX = "< ",
                     NEWS_DATE_FORMAT = "%A, %d %B %Y",
+                    NEWS_PREV_LINK = "Previous",
+                    NEWS_NEXT_LINK = "Next",
                     INDENT_HTML_TREE = "YES",
                     DEBUG_ERRORS = "NO",
                     FTP_SERVER = "",
@@ -147,6 +149,56 @@ def Quicknr():
     
     # Boolean toggle for 'page_sources/news.txt' updating conversion
     updateNewsList = False
+    
+    # Javascript that Quicknr will place in "public_html/res/js/news.js" file
+    newsLinksJavascript = """
+
+//==DO_NOT_EDIT_THIS_LINE
+// Quicknr requires the above line for placing of news files list
+
+// ======================= NEWS PREV NEXT LINKS =====================
+
+function CreateNewsPrevNextLinks() {
+    // Check if we're in news folder
+    wHref = window.location.href;
+    wDirPath = wHref.substr(0,wHref.lastIndexOf("/"));
+    wDir = wDirPath.substr(wDirPath.lastIndexOf("/")+1);
+    if ((wDir == "news") && (news_files_list.length > 1)) {
+        prevLink = "";
+        nextLink = "";
+        for (var i = 0; i < news_files_list.length; i++) {
+            if (window.location.href.split("/").pop() == news_files_list[i]) {
+                // The newest file is first in the list, the oldest last
+                if (i == 0) {
+                    prevLink = news_files_list[i+1];
+                    nextLink = "";
+                }
+                else if (i == news_files_list.length - 1) {
+                    prevLink = "";
+                    nextLink = news_files_list[i-1];
+                }
+                else {
+                    prevLink = news_files_list[i+1];
+                    nextLink = news_files_list[i-1];
+                }
+                break;
+            }
+        }
+        linksDiv = document.getElementsByClassName("news_links")[0];
+        linksDivText = linksDiv.innerHTML;
+        if (prevLink != "") {
+            prevLink = '\n<span class="prev_link"><a href="'+prevLink+'">'+news_prev_link_text+'</a></span>';
+            linksDivText = prevLink + linksDivText;
+        }
+        if (nextLink != "") {
+            nextLink = '<span class="next_link"><a href="'+nextLink+'">'+news_next_link_text+'</a></span>\n';
+            linksDivText = linksDivText + nextLink;
+        }
+        linksDiv.innerHTML = linksDivText;
+    }
+}
+
+    """
     
     # --------------------- INTERFACE/UTILITY FUNCTIONS ---------------------
 
@@ -326,6 +378,11 @@ def Quicknr():
             # --------------------- Copy Quicknr config folder to website
             cPath = os.path.join(qnrDir, "websites/" + r1 + "/config")
             shutil.copytree(os.path.join(qnrDir, "config"), cPath)
+            # --------------------- Create news.js file
+            with open(os.path.join(qnrDir, 
+                                    "websites/" + r1 + "/public_html/res/js/news.js"), 
+                                    mode="w") as f:
+                f.write(newsLinksJavascript)
             # --------------------- Record website folder name in data file
             with open(os.path.join(qnrDir, 
                                     "websites/" + r1 + "/quicknr_private/quicknr_data.txt"), 
@@ -388,7 +445,9 @@ def Quicknr():
               /public-html/res/css - CSS stylesheet files
               /public-html/res/font - Custom fonts
               /public-html/res/img - Website interface images and icons
-              /public_html/res/js  - Javascript files
+              /public_html/res/js  - Javascript files, including news.js
+                                     continually updated by Quicknr for 
+                                     dynamic Prev/Next news links
               
               /quicknr_private/       - Location of the 'quicknr_data.txt'
                                      file, used by Quicknr to perform its
@@ -528,6 +587,8 @@ def Quicknr():
             _ve("NEWS_LIST_LINK_POSITION")
         # News list link prefix can be empty, no validation
         if not CD["NEWS_DATE_FORMAT"].strip(): _ve("NEWS_DATE_FORMAT")
+        if not CD["NEWS_PREV_LINK"].strip(): _ve("NEWS_PREV_LINK")
+        if not CD["NEWS_NEXT_LINK"].strip(): _ve("NEWS_NEXT_LINK")
         if CD["INDENT_HTML_TREE"] not in ["YES","NO"]: _ve("INDENT_HTML_TREE")
         if CD["DEBUG_ERRORS"] not in ["YES","NO"]: _ve("DEBUG_ERRORS")
         # Leave out server values
@@ -583,6 +644,10 @@ def Quicknr():
             CD["NEWS_LIST_LINK_PREFIX"] = re.search(r"(?m)^NEWS_LIST_LINK_PREFIX:"+rP,cT).group(1)
         if re.search(r"(?m)^NEWS_DATE_FORMAT:",cT):
             CD["NEWS_DATE_FORMAT"] = re.search(r"(?m)^NEWS_DATE_FORMAT:"+rP,cT).group(1)
+        if re.search(r"(?m)^NEWS_PREV_LINK:",cT):
+            CD["NEWS_PREV_LINK"] = re.search(r"(?m)^NEWS_PREV_LINK:"+rP,cT).group(1)
+        if re.search(r"(?m)^NEWS_NEXT_LINK:",cT):
+            CD["NEWS_NEXT_LINK"] = re.search(r"(?m)^NEWS_NEXT_LINK:"+rP,cT).group(1)
         if re.search(r"(?m)^INDENT_HTML_TREE:",cT):
             CD["INDENT_HTML_TREE"] = re.search(r"(?m)^INDENT_HTML_TREE:"+rP,cT).group(1)
         if re.search(r"(?m)^DEBUG_ERRORS:",cT):
@@ -1070,7 +1135,8 @@ def Quicknr():
         # If news post, insert link to news listing, named per pref
         hCode = ""
         if os.path.split(os.path.dirname(CD["sourceFilePath"]))[1] == "news":
-            hCode = '<div class="news_listing_link">\n<a href="../news.html">{}{}</a>\n</div>\n'
+            hCode = '<div class="news_links">\n<span class="listing_link">'
+            hCode += '<a href="../news.html">{}{}</a></span>\n</div>\n'
             hCode = hCode.format(html.escape(CD["NEWS_LIST_LINK_PREFIX"],quote=False),CD["NEWS_LIST_TITLE"])
         if CD["NEWS_LIST_LINK_POSITION"] == "START":
             rT = "<div class=\"user_content "+docN+"\">\n"+hCode+rT+"</div>\n"
@@ -1268,6 +1334,8 @@ def Quicknr():
             if os.path.split(os.path.dirname(fxNC))[1] == "news":
                 # Get title, first paragraph, and file path relative to html dir
                 nhTitle = html.unescape(CD["HTML_PAGE_TITLE"])
+                # ...but the unescape doesn't catch everything, so we correct
+                nhTitle = re.sub(r"&amp;([A-Za-z0-9#]{2,6};)", r"&\1", nhTitle)
                 nhFP = ""
                 with open(fxNC, mode="r") as f: fT = f.read()
                 mo = re.search(r"(?m)^\S.+$(?=\n\n)", fT)
@@ -1311,7 +1379,7 @@ def Quicknr():
                 if len(nlT.split("\n\n")[1:]) > 2*int(CD["NEWS_LIST_ITEMS"]):
                     nlT = "\n\n".join(nlT.split("\n\n")[:-2])
                 # Tidy up, just in case
-                nlT = re.sub(r"[ ]+\n", "", nlT)
+                nlT = re.sub(r"[ ]+\n", "\n", nlT)
                 nlT = re.sub(r"(\n\n)\n+", r"\1", nlT)
                 # Write news listing file
                 with open(os.path.join(sourcesDirs[0], "news.txt"), mode="w") as f:
@@ -1446,6 +1514,7 @@ def Quicknr():
                 if CD["FTP_DEBUG"] == "1" or CD["FTP_DEBUG"] == "2":
                     fc.set_debuglevel(int(CD["FTP_DEBUG"]))
                 print("\n"+fc.getwelcome())
+                # Will throw error if path not exist, cannot create dir
                 fc.cwd(CD["FTP_PATH"])
                 print("\n"+fc.pwd())
                 fc.dir(); print("")
@@ -1568,6 +1637,32 @@ def Quicknr():
                         "       Fix and try again.\n"
                         "       Quit.".format(CD["siteFolder"],sp))
     
+    def _get_news_file_list(qnrDataPath):
+        """
+        Returns list of 2-item lists of news date and HTML files, 
+        matching sources from record, sorted by date
+        
+        """
+        with open(qnrDataPath, mode="r") as f: fT = f.read()
+        nfL = [] # List of 2-item lists of news date and HTML file rel URL
+        for line in fT.splitlines()[1:]:
+            pfP = line.split("\t", maxsplit=1)[0]
+            if re.match(r".?page_sources", pfP) and os.path.split(os.path.dirname(pfP))[1] == "news":
+                # We allow Markdown files for any future compatibility
+                if os.path.splitext(pfP)[1] in [".txt", ".mdml"]:
+                    x = os.path.join(CD["siteDir"], pfP)
+                    wD = _get_file_record_date(x, fT)
+                    xbn = os.path.splitext(os.path.basename(x))[0] # No extension
+                    for y in fT.splitlines()[1:]:
+                        ypfP = y.split("\t", maxsplit=1)[0]
+                        if re.match(r".?public_html", ypfP) and os.path.split(os.path.dirname(ypfP))[1] == "news":
+                            ybn = os.path.splitext(os.path.basename(ypfP))[0] # No ext
+                            if ybn == xbn: # HTML file name matches txt source
+                                nfL.append([wD.strftime("%Y-%m-%d_%H-%M-%S"), os.path.basename(ypfP)])
+                                break
+        nfL.sort()
+        return nfL
+    
     # --------------------- In Quicknr() namespace
     # ================================================================
     
@@ -1633,6 +1728,25 @@ def Quicknr():
         convertedFiles = _convert_sources_to_html(sourcesDirs,htmlDirs,sLxNC,qnrDT)
         if convertedFiles: _record_new_files(convertedFiles, qnrDataPath, qnrDT)
         # Data file must be updated by this point, and it is
+        # If news were updated, update res/js/news.js for dynamic prev/next links
+        if updateNewsList:
+            # Get list of news files from record, sorted by date
+            newsFL = _get_news_file_list(qnrDataPath)
+            # Write file list to res/js/news.js
+            if newsFL:
+                jsfP = os.path.join(CD["siteDir"], "public_html/res/js/news.js")
+                jsfT = ""
+                if os.path.exists(jsfP): # If no news.js, its function must be elsewhere
+                    with open(jsfP, mode="r") as f:
+                        jsfT = f.read()
+                        jsfT = jsfT.split("//==DO_NOT_EDIT_THIS_LINE", maxsplit=1)[1]
+                for i,x in enumerate(newsFL):
+                    if not i: jsfT = '"'+x[1]+'"];\n\n//==DO_NOT_EDIT_THIS_LINE'+jsfT
+                    else: jsfT = '"' + x[1] + '", ' + jsfT
+                jsfT = '\nvar news_files_list = [' + jsfT
+                jsfT = '\nvar news_next_link_text = "' + CD["NEWS_NEXT_LINK"] + '";' + jsfT
+                jsfT = '\nvar news_prev_link_text = "' + CD["NEWS_PREV_LINK"] + '";' + jsfT
+                with open(jsfP, mode="w") as f: f.write(jsfT)
         print("\nDone.")
     # --------------------- Upload files to server
     # First, record news images if they are new (not yet in record) or changed in size
@@ -1655,6 +1769,8 @@ def Quicknr():
             if cliArgs.jsupload: filesToUpload.extend(_get_files_for_upload("js"))
             if cliArgs.fontsupload: filesToUpload.extend(_get_files_for_upload("font"))
             if cliArgs.imgupload: filesToUpload.extend(_get_files_for_upload("img"))
+    if updateNewsList and not cliArgs.allupload and not cliArgs.resupload and not cliArgs.jsupload:
+        filesToUpload.append("public_html/res/js/news.js")
     if filesToUpload:
         filesToUpload.sort()
         print(  "\n  These files will now be uploaded:\n\n    " + \
