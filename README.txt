@@ -27,6 +27,10 @@ Windows, Mac and Linux.
 
 CHANGELOG
 
+Version 1.2.2 - 8 March 2016
+
+Fix for an uploading bug introduced in previous release, and another typo.
+
 Version 1.2.1 - 8 March 2016
 
 Fixing typos missed in previous release.
