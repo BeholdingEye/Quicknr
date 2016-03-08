@@ -10,7 +10,7 @@
 #                       from plain text sources                        #
 #                                                                      #
 #                                                                      #
-#                            Version 1.2.1                             #
+#                            Version 1.2.2                             #
 #                                                                      #
 #            Copyright 2016 Karl Dolenc, beholdingeye.com.             #
 #                         All rights reserved.                         #
@@ -88,7 +88,7 @@ def Quicknr():
     
     """
     
-    print("\n===================== QUICKNR 1.2.1 =====================\n")
+    print("\n===================== QUICKNR 1.2.2 =====================\n")
     
     # --------------------- App defaults
     
@@ -112,7 +112,7 @@ def Quicknr():
                     NEWS_BLURB_LENGTH = "300",
                     NEWS_MORE_PHRASE = "More...",
                     NEWS_LIST_LINK_POSITION = "END",
-                    NEWS_LIST_LINK_PREFIX = "< ",
+                    NEWS_LIST_LINK_PREFIX = "",
                     NEWS_DATE_FORMAT = "%A, %d %B %Y",
                     NEWS_PREV_LINK = "&lt; Older",
                     NEWS_NEXT_LINK = "Newer &gt;",
@@ -1769,8 +1769,11 @@ function CreateNewsPrevNextLinks() {
             if cliArgs.jsupload: filesToUpload.extend(_get_files_for_upload("js"))
             if cliArgs.fontsupload: filesToUpload.extend(_get_files_for_upload("font"))
             if cliArgs.imgupload: filesToUpload.extend(_get_files_for_upload("img"))
-    if updateNewsList and not cliArgs.allupload and not cliArgs.resupload and not cliArgs.jsupload:
-        filesToUpload.append("public_html/res/js/news.js")
+    if updateNewsList:
+        if not cliArgs:
+            filesToUpload.append("public_html/res/js/news.js")
+        elif not cliArgs.allupload and not cliArgs.resupload and not cliArgs.jsupload:
+            filesToUpload.append("public_html/res/js/news.js")
     if filesToUpload:
         filesToUpload.sort()
         print(  "\n  These files will now be uploaded:\n\n    " + \
