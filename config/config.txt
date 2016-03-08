@@ -150,14 +150,38 @@ NEWS_DATE_FORMAT: "%A, %d %B %Y"
 #  END, default being END.                                             #
 #                                                                      #
 #  The last preference sets the prefix for the news link. Default is   #
-#  "< ".                                                               #
+#  the empty string "".                                                #
 #                                                                      #
 NEWS_LIST_ITEMS: 50
 NEWS_LIST_TITLE: "Latest News"
 NEWS_BLURB_LENGTH: 300
 NEWS_MORE_PHRASE: "More..."
 NEWS_LIST_LINK_POSITION: END
-NEWS_LIST_LINK_PREFIX: "< "
+NEWS_LIST_LINK_PREFIX: ""
+
+########################################################################
+#                                                                      #
+#                      NEWS PREVIOUS & NEXT LINKS                      #
+#                                                                      #
+#  News pages have their Previous and Next links created dynamically   #
+#  by Javascript, using a file list that Quicknr writes in the         #
+#  "public_html/res/js/news.js" file.                                  #
+#                                                                      #
+#  The two options below control the text that will be used for the    #
+#  links, "&lt; Older" and "Newer &gt;" being default values.          #
+#                                                                      #
+#  No HTML escaping is done by Quicknr on these values.                #
+#                                                                      #
+#  The position of the links on the page, either start or end, is      #
+#  controlled by the NEWS_LIST_LINK_POSITION setting above.            #
+#                                                                      #
+#  The links can be styled using the "news_links" class for the DIV    #
+#  block containing the three links, SPAN classes "prev_link" for      #
+#  Previous, "next_link" for Next, and "listing_link" for the news     #
+#  listing page link.                                                  #
+#                                                                      #
+NEWS_PREV_LINK: "&lt; Older"
+NEWS_NEXT_LINK: "Newer &gt;"
 
 ########################################################################
 #                                                                      #
@@ -389,8 +413,12 @@ HTML_HEAD: """
 <!--
 // -->
 </script>
+<script src="res/js/news.js" type="text/javascript">
+<!--
+// -->
+</script>
 </head>
-<body>
+<body onload="javascript:CreateNewsPrevNextLinks();">
 <div class="page">
 @import: "all.txt"
 """
