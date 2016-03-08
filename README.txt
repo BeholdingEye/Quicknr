@@ -27,6 +27,10 @@ Windows, Mac and Linux.
 
 CHANGELOG
 
+Version 1.2.1 - 8 March 2016
+
+Fixing typos missed in previous release.
+
 Version 1.2.0 - 8 March 2016
 
 News posts now feature Previous and Next links, created dynamically by 
