@@ -10,7 +10,7 @@
 #                       from plain text sources                        #
 #                                                                      #
 #                                                                      #
-#                            Version 1.2.2                             #
+#                            Version 1.2.3                             #
 #                                                                      #
 #            Copyright 2016 Karl Dolenc, beholdingeye.com.             #
 #                         All rights reserved.                         #
@@ -88,7 +88,7 @@ def Quicknr():
     
     """
     
-    print("\n===================== QUICKNR 1.2.2 =====================\n")
+    print("\n===================== QUICKNR 1.2.3 =====================\n")
     
     # --------------------- App defaults
     
@@ -187,11 +187,11 @@ function CreateNewsPrevNextLinks() {
         linksDiv = document.getElementsByClassName("news_links")[0];
         linksDivText = linksDiv.innerHTML;
         if (prevLink != "") {
-            prevLink = '\n<span class="prev_link"><a href="'+prevLink+'">'+news_prev_link_text+'</a></span>';
+            prevLink = '\\n<span class="prev_link"><a href="'+prevLink+'">'+news_prev_link_text+'</a></span>';
             linksDivText = prevLink + linksDivText;
         }
         if (nextLink != "") {
-            nextLink = '<span class="next_link"><a href="'+nextLink+'">'+news_next_link_text+'</a></span>\n';
+            nextLink = '<span class="next_link"><a href="'+nextLink+'">'+news_next_link_text+'</a></span>\\n';
             linksDivText = linksDivText + nextLink;
         }
         linksDiv.innerHTML = linksDivText;
