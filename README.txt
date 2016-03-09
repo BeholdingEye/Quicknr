@@ -27,6 +27,10 @@ Windows, Mac and Linux.
 
 CHANGELOG
 
+Version 1.2.3 - 9 March 2016
+
+Correction for two unescaped line breaks in the news.js file.
+
 Version 1.2.2 - 8 March 2016
 
 Fix for an uploading bug introduced in previous release, and another typo.
