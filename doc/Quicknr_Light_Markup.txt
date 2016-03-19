@@ -39,7 +39,7 @@ To link to one of your own images, enter its filepath, relative to the
 eventual HTML document, as the URL. In the following example, the image 
 has the correct path if used in a Quicknr news page:
 
-[On the beach news/images/holiday.jpg] For things to flow nicely on the 
+[On the beach images/holiday.jpg] For things to flow nicely on the 
 page, image links must be in their own paragraphs (cat image above) or 
 at the beginning of a paragraph of text (holiday image here).
 
