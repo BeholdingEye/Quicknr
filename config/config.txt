@@ -185,18 +185,56 @@ NEWS_NEXT_LINK: "Newer &gt;"
 
 ########################################################################
 #                                                                      #
+#                           NEWS LIST THUMBS                           #
+#                                                                      #
+#  This setting controls whether Quicknr will prepend image            #
+#  thumbnails to news post intro blurbs in the news list page. It's a  #
+#  nice feature to have, adding visual candy to what could otherwise   #
+#  appear as quite a dry textual page.                                 #
+#                                                                      #
+#  By default the feature is on with the value of YES. Disable with    #
+#  NO.                                                                 #
+#                                                                      #
+#  Quicknr will use the first image it finds in the source news file   #
+#  for the thumbnail.                                                  #
+#                                                                      #
+#  Rather than use the full-size images, Quicknr will look for their   #
+#  thumbnail counterparts, in the same directory, if the image link    #
+#  is to a local file on the server. Thumbnails should have the same   #
+#  name as the full-size file, but ending with "thumb.jpg".            #
+#                                                                      #
+#  For example, if the image in your news post is "dog.jpg", the       #
+#  thumbnail should be "dog-thumb.jpg", or "dog_thumb.jpg" or          #
+#  "dogthumb.jpg".                                                     #
+#                                                                      #
+#  If thumbnails aren't found, and the Python Imaging Library (PIL)    #
+#  module is installed (it isn't by default), Quicknr will create a    #
+#  thumbnail of the original image and use it.                         #
+#                                                                      #
+#  If thumbnails aren't found and PIL is not available, the full-size  #
+#  images will be used. In this case, it helps if the images are       #
+#  saved as progressive JPEGs, so that at least a low res version is   #
+#  shown before the image loads completely.                            #
+#                                                                      #
+#  NEWS_LIST_THUMB_SIZE sets the pixel size of the rectangular thumb   #
+#  that will be created. Default value is 100.                         #
+#                                                                      #
+NEWS_LIST_THUMBS: YES
+NEWS_LIST_THUMB_SIZE: 100
+
+########################################################################
+#                                                                      #
 #                           INDENT HTML TREE                           #
 #                                                                      #
 #  Quicknr uses a standard Python XML parser to nicely indent the      #
-#  HTML tree in a hierarchical manner that makes the page source code  #
-#  easier to read. However, if the parser encounters "badly formed"    #
-#  markup, it can produce broken HTML, without throwing an error. It   #
-#  also adds whitespace around tags in some cases.                     #
+#  HTML tree in a hierarchical manner, making the page source code     #
+#  easier to read. If the parser encounters "badly formed" markup, it  #
+#  will fail and the HTML tree will not be indented.                   #
 #                                                                      #
-#  To avoid disappointment, the indenting is by default turned off     #
-#  with the value of NO. You can turn it on with YES.                  #
+#  The feature is by default turned on with the value of YES. Disable  #
+#  with NO.                                                            #
 #                                                                      #
-INDENT_HTML_TREE: NO
+INDENT_HTML_TREE: YES
 
 ########################################################################
 #                                                                      #
@@ -386,16 +424,18 @@ HTML_HEAD: """
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+
 <meta name="description" content="" />
 <meta name="keywords" content="" />
 <meta name="author" content="" />
 
 <!-- Open Graph -->
-<meta property="og:title" content="" />
-<meta property="og:description" content="" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="" />
-<meta property="og:image" content="" />
+<meta name="og:title" content="" />
+<meta name="og:description" content="" />
+<meta name="og:type" content="website" />
+<meta name="og:url" content="" />
+<meta name="og:image" content="" />
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary" />
@@ -407,6 +447,7 @@ HTML_HEAD: """
 <link rel="canonical" href="" />
 <title></title>
 <link rel="shortcut icon" href="res/img/favicon.ico" type="image/x-icon" />
+<link rel="icon" href="res/img/appleicon.png" type="image/png" />
 <link rel="apple-touch-icon" href="res/img/appleicon.png" />
 <link rel="stylesheet" href="res/css/main.css" type="text/css" />
 <script src="res/js/main.js" type="text/javascript">
@@ -418,7 +459,7 @@ HTML_HEAD: """
 // -->
 </script>
 </head>
-<body onload="javascript:CreateNewsPrevNextLinks();">
+<body onload="CreateNewsPrevNextLinks();">
 <div class="page">
 @import: "all.txt"
 """
