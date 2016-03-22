@@ -10,7 +10,7 @@
 #                       from plain text sources                        #
 #                                                                      #
 #                                                                      #
-#                            Version 1.2.3                             #
+#                            Version 1.3.0                             #
 #                                                                      #
 #            Copyright 2016 Karl Dolenc, beholdingeye.com.             #
 #                         All rights reserved.                         #
@@ -55,6 +55,11 @@ from contextlib import suppress
 try: import markdown
 except ImportError: markdownModule = False
 else: markdownModule = True
+try:
+    from PIL import Image as img
+    from PIL import ImageOps
+except ImportError: imgModule = False
+else: imgModule = True
 
 
 def markdown_to_html(text):
@@ -88,7 +93,7 @@ def Quicknr():
     
     """
     
-    print("\n===================== QUICKNR 1.2.3 =====================\n")
+    print("\n===================== QUICKNR 1.3.0 =====================\n")
     
     # --------------------- App defaults
     
@@ -116,6 +121,8 @@ def Quicknr():
                     NEWS_DATE_FORMAT = "%A, %d %B %Y",
                     NEWS_PREV_LINK = "&lt; Older",
                     NEWS_NEXT_LINK = "Newer &gt;",
+                    NEWS_LIST_THUMBS = "YES",
+                    NEWS_LIST_THUMB_SIZE = "100",
                     INDENT_HTML_TREE = "YES",
                     DEBUG_ERRORS = "NO",
                     FTP_SERVER = "",
@@ -589,6 +596,8 @@ function CreateNewsPrevNextLinks() {
         if not CD["NEWS_DATE_FORMAT"].strip(): _ve("NEWS_DATE_FORMAT")
         if not CD["NEWS_PREV_LINK"].strip(): _ve("NEWS_PREV_LINK")
         if not CD["NEWS_NEXT_LINK"].strip(): _ve("NEWS_NEXT_LINK")
+        if CD["NEWS_LIST_THUMBS"] not in ["YES","NO"]: _ve("NEWS_LIST_THUMBS")
+        if not re.match(r"\d+\Z", CD["NEWS_LIST_THUMB_SIZE"]): _ve("NEWS_LIST_THUMB_SIZE")
         if CD["INDENT_HTML_TREE"] not in ["YES","NO"]: _ve("INDENT_HTML_TREE")
         if CD["DEBUG_ERRORS"] not in ["YES","NO"]: _ve("DEBUG_ERRORS")
         # Leave out server values
@@ -648,6 +657,10 @@ function CreateNewsPrevNextLinks() {
             CD["NEWS_PREV_LINK"] = re.search(r"(?m)^NEWS_PREV_LINK:"+rP,cT).group(1)
         if re.search(r"(?m)^NEWS_NEXT_LINK:",cT):
             CD["NEWS_NEXT_LINK"] = re.search(r"(?m)^NEWS_NEXT_LINK:"+rP,cT).group(1)
+        if re.search(r"(?m)^NEWS_LIST_THUMBS:",cT):
+            CD["NEWS_LIST_THUMBS"] = re.search(r"(?m)^NEWS_LIST_THUMBS:"+rP,cT).group(1)
+        if re.search(r"(?m)^NEWS_LIST_THUMB_SIZE:",cT):
+            CD["NEWS_LIST_THUMB_SIZE"] = re.search(r"(?m)^NEWS_LIST_THUMB_SIZE:"+rP,cT).group(1)
         if re.search(r"(?m)^INDENT_HTML_TREE:",cT):
             CD["INDENT_HTML_TREE"] = re.search(r"(?m)^INDENT_HTML_TREE:"+rP,cT).group(1)
         if re.search(r"(?m)^DEBUG_ERRORS:",cT):
@@ -755,6 +768,23 @@ function CreateNewsPrevNextLinks() {
         sL.sort(); sLx.sort(); sLxN.sort(); sLxC.sort(); hL.sort()
         return [sL, sLx, sLxN, sLxC, hL]
     
+    def _save_image_thumbnail(filePath):
+        """
+        Resizes the image file to thumbnail, assumes img module available
+        Returns thumb file path
+        
+        """
+        size = int(CD["NEWS_LIST_THUMB_SIZE"]), int(CD["NEWS_LIST_THUMB_SIZE"])
+        if not os.path.exists(filePath):
+            _say_error( "Error: File '{}' not found.\n"
+                        "       Thumbnail could not be created. Check your image links.\n"
+                        "       Quit.".format(filePath))
+        im = img.open(filePath)
+        im = ImageOps.fit(im, size, img.ANTIALIAS, 0, (0.5,0.5))
+        im.save(os.path.splitext(filePath)[0]+"-thumb.jpg","JPEG",optimize=True,quality=45)
+        return os.path.splitext(filePath)[0] + "-thumb.jpg"
+
+
     # --------------------- HTML FILE BUILDING FUNCTIONS ---------------------
     
     def _enter_html_title():
@@ -960,7 +990,6 @@ function CreateNewsPrevNextLinks() {
                 fCount = 0 # Image float count
                 vCount = 0 # Video count
                 lCount = 0 # List count
-                fRand = int(random.choice("10")) # Random control for left/right floating
                 for pT in sT.split("\n\n"):
                     if not pT.strip(): continue
                     
@@ -1077,22 +1106,15 @@ function CreateNewsPrevNextLinks() {
                                             "       Correct and try again.\n"
                                             "       Quit.")
                         fCount += 1;
-                        # Random control of which side floating zig-zag starts in section
-                        if fRand:
-                            oe1 = "even"
-                            oe2 = "odd"
-                        else:
-                            oe1 = "odd"
-                            oe2 = "even"
                         ipT = '<div class="imgfloat imgfloat_{} {} section_{}">\n'
                         if clickLinkURL:
                             ipT = '<div class="imgfloat link_img imgfloat_{} {} section_{}">\n<a href="{}">\n'
                         ipT += '<img src="{}" alt="{}" />\n'
                         if clickLinkURL:
-                            ipT = ipT.format(fCount,fCount%2 and oe1 or oe2,sCount,
+                            ipT = ipT.format(fCount,fCount%2 and "odd" or "even",sCount,
                                                         clickLinkURL,linkURL,linkText)
                         else:
-                            ipT = ipT.format(fCount,fCount%2 and oe1 or oe2,sCount,
+                            ipT = ipT.format(fCount,fCount%2 and "odd" or "even",sCount,
                                                         linkURL,linkText)
                         if clickLinkURL: ipT += '</a>\n'
                         if linkText: ipT += '<p class="imgcaption">\n{}\n</p>\n'.format(linkText)
@@ -1187,6 +1209,41 @@ function CreateNewsPrevNextLinks() {
             return rT
         else: return text
     
+    def _get_news_post_thumb_url(newsT):
+        """
+        Returns either the thumb or full-size image URL for first image in news post,
+        depending on whether a thumb is available, or PIL can be used to create it
+        
+        """
+        mo = re.search(r"(?m)^\[([^\]]+?(?:\.jpg|\.png|\.gif))\]", newsT)
+        if mo:
+            imgURL = mo.group(1)
+            if len(imgURL.split()) > 1: # Drop non-URL part if any
+                imgURL = imgURL.rsplit(maxsplit=1)[1]
+            # Return if it's an external link
+            if re.match(r"http|www\.", imgURL): return imgURL
+            # Resolve relative URL
+            if imgURL.startswith("../"):
+                imgURL = imgURL[3:]
+                # Return empty if illegal URL out of "public_html"
+                if imgURL.startswith("../"): return ""
+            else: imgURL = "news/" + imgURL
+            thumbPath, fXt = os.path.splitext(imgURL)
+            # If image is a thumb itself, return it
+            if thumbPath.endswith("thumb"):
+                return imgURL
+            for x in ["thumb","-thumb","_thumb"]:
+                if os.path.exists(os.path.join(CD["siteDir"], "public_html/"+thumbPath+x+fXt)):
+                    return thumbPath+x+fXt
+            # Thumb file not found, try to create it, if PIL available
+            if imgModule:
+                tP = _save_image_thumbnail(os.path.join(CD["siteDir"],"public_html/"+imgURL))
+                return os.path.relpath(tP, os.path.join(CD["siteDir"], "public_html/"))
+            else:
+                return imgURL
+        else:
+            return ""
+    
     def _convert_sources_to_html(sourcesDirs, htmlDirs, sLxNC, wdataT):
         """
         Converts source ".txt"/".mdml" files that are either new or the user
@@ -1241,6 +1298,9 @@ function CreateNewsPrevNextLinks() {
             print("       " + relfxNC)
             with open(fxNC, mode="r") as f:
                 hT = f.read()
+            # Protect links in news files before we prepend ../
+            if os.path.split(os.path.dirname(fxNC))[1] == "news":
+                hT = re.sub(r"(\[(?:[^\]]+[ ])?)([^ \]]+\])", r"\1Quicknr__newsLink__Quicknr\2", hT)
             # Update CD with source file path
             CD["sourceFilePath"] = fxNC
             # Keep file extension, will change later if ".txt"/".mdml"
@@ -1285,20 +1345,28 @@ function CreateNewsPrevNextLinks() {
                 hT = re.sub(r"((?:href|src)=\")(?!(?:\.\./|http:|https:|file:|ftp:|javascript:|mailto:))", 
                                                                     r"\1../",hT)
                 hT = re.sub(r"((?:href|src)=\")\.\./(#)", r"\1\2", hT) # Correction (for bug?)
+                hT = re.sub(r"(?:\.\./)?Quicknr__newsLink__Quicknr", "", hT) # Ditto
+                hT = re.sub(r"((?:href|src)=\")(www\.)", r"\1http://\2", hT)
             # Enter IDs in DIV, P, H1-6, IMG, IFRAME, DL, DT, DD, OL, UL, and LI
             if CD["HTML_TAG_ID"] == "YES":
                 idCount = 0
                 def _id_generator(mo):
                     """Enters numerical series of IDs into tags"""
                     nonlocal idCount
-                    idCount += 1
-                    return r'{} id="id{}"{}'.format(mo.group(1),idCount,mo.group(2))
+                    if ' id="' in mo.group():
+                        return mo.group()
+                    else:
+                        idCount += 1
+                        return r'{} id="id{}"{}'.format(mo.group(1),idCount,mo.group(2))
                 hT = re.sub(r"(<(?:div|p|h\d|img|iframe|dl|dt|dd|ol|ul|li)(?:[ ][^>]*?)*?)(/?>)", 
                                                                     _id_generator, hT)
-            
+            # Remove empty lines
+            hT = re.sub(r"\s+\n", r"\n", hT)
             # Indent HTML tree structure (if from ".txt" source)
             if fX == ".txt" and CD["INDENT_HTML_TREE"] == "YES":
+                ohT = hT[:] # If indenting fails, recover original
                 try:
+                    hT = re.sub(r">\s*\n\s*<","><",hT)
                     hT = re.sub(r">\n+",">",hT)
                     hT = re.sub(r"\n+<","<",hT)
                     with xml.parseString(hT) as dom:
@@ -1310,18 +1378,22 @@ function CreateNewsPrevNextLinks() {
                     hT = re.sub(r"(?<![ ])(/>)", r" \1", hT)
                     # Remove whitespace between closing tag and punctuation
                     hT = re.sub(r"(</[^>]+>)\s+(?=[,.?!'\"\)])", r"\1", hT)
+                    # Remove line breaks before <span> tags
+                    hT = re.sub(r"\n+[ ]*(<span )", r"\1", hT)
                     # Remove whitespace at start of <p> block 
                     # for Chrome's handling of white-space CSS
                     hT = re.sub(r"(<p [^>]+>)\s+", r"\1", hT)
                 except: # Fail silently
-                    pass
+                    hT = ohT[:]
             # Bring in <pre> code text (protected earlier)
             if preContentL:
                 for x in preContentL:
                     #x = html.escape(x, quote=False) # Done already
                     hT = hT.replace(">Quicknr?=preText=?Quicknr</pre>", ">" + x + "</pre>", 1)
             # Last correction, for overzealous char entity conversion of &
-            hT = re.sub(r"&amp;([A-Za-z0-9#]{2,6};)", r"&\1", hT)
+            hT = re.sub(r"&amp;([A-Za-z0-9#]{2,8};)", r"&\1", hT)
+            # Remove whitespace around &nbsp;
+            hT = re.sub(r"\s*(&nbsp;)\s*", r"\1", hT)
             with open(hF, mode="w") as f:
                 f.write(hT)
             relhF = os.path.relpath(hF, CD["siteDir"])
@@ -1335,27 +1407,36 @@ function CreateNewsPrevNextLinks() {
                 # Get title, first paragraph, and file path relative to html dir
                 nhTitle = html.unescape(CD["HTML_PAGE_TITLE"])
                 # ...but the unescape doesn't catch everything, so we correct
-                nhTitle = re.sub(r"&amp;([A-Za-z0-9#]{2,6};)", r"&\1", nhTitle)
+                nhTitle = re.sub(r"&amp;([A-Za-z0-9#]{2,8};)", r"&\1", nhTitle)
                 nhFP = ""
                 with open(fxNC, mode="r") as f: fT = f.read()
-                mo = re.search(r"(?m)^\S.+$(?=\n\n)", fT)
+                # Get first image from news post, thumbnail if possible
+                nhImg = ""
+                if CD["NEWS_LIST_THUMBS"] == "YES":
+                    nhImg = _get_news_post_thumb_url(fT)
+                    if nhImg: nhImg = "[" + nhImg + "]"
+                # Get first paragraph, skip headings, link paras, img floats & directives
+                fT = re.sub(r"(?:@import:|@python:) \"[^\"\n]*\"", "", fT)
+                fT = re.sub(r"(?m)^\[[^\]\n]+\]$", "", fT)
+                fT = re.sub(r"(?m)^\[[^\]\n]+?(?:\.jpg|\.png|\.gif|\.svg)\] (\S)",r"\1",fT)
+                mo = re.search(r"(?m)^\S.+?$(?=\n\n)", fT)
                 if mo: nhFP = mo.group()
                 # Get rid of any links in first paragraph
                 if "[" in nhFP and "]" in nhFP:
                     nhFP = re.sub(r"\[+[ ]*([^ \]]+)[ ]*\]+", "\1", nhFP)
                     nhFP = re.sub(r"\[+[ ]*([^\]]+?)[ ]+[^ \]]+[ ]*\]+", r"\1", nhFP)
-                if len(nhFP) < 20: nhFP = "" # Most likely not literal text
                 elif len(nhFP) > int(CD["NEWS_BLURB_LENGTH"]): # Nicely shorten by word
                     nhFP = nhFP[:int(CD["NEWS_BLURB_LENGTH"])].rsplit(maxsplit=1)[0]+"..."
-                if nhFP: nhFP += " "
+                nhFP += " "
                 nhPath = os.path.relpath(CD["htmlFilePath"], htmlDirs[0])
+                if nhImg: nhImg += "[" + nhPath + "] " # Make thumb link to post
                 # Date: get record or today's
                 dD = _get_file_record_date(fxNC, wdataT)
                 if not dD:
                     dD = dt.date.today()
-                # Construct news listing item; linked heading and a para: title and intro
+                # Construct news listing item; linked heading and a para: title, img & intro
                 nhNItem = "   _"+dD.strftime("%Y-%b-%d")+"_ ["+nhTitle+" "+nhPath+"]\n\n"+\
-                                    nhFP+"["+CD["NEWS_MORE_PHRASE"]+" "+nhPath+"]"
+                                    nhImg+nhFP+"["+CD["NEWS_MORE_PHRASE"]+" "+nhPath+"]"
                 # --------------------- News listing source file
                 nlT = ""
                 if os.path.exists(os.path.join(sourcesDirs[0], "news.txt")):
@@ -1537,8 +1618,8 @@ function CreateNewsPrevNextLinks() {
                                 fc.cwd(a)
                     # --------------------- Upload
                     print("\n"+fc.pwd())
+                    print("  Uploading file '{}' ...".format(fP), end="")
                     with open(os.path.join(CD["siteDir"], fP), mode="rb") as uf:
-                        print("  Uploading file '{}' ...".format(fP), end="")
                         fc.storbinary("STOR "+fN, uf)
                         print(" Done.")
                     if subDs: fc.cwd("../"*len(subDs))
@@ -1663,6 +1744,16 @@ function CreateNewsPrevNextLinks() {
         nfL.sort()
         return nfL
     
+    def _check_files_for_news(fList):
+        """
+        Returns true if file list contains news
+        
+        """
+        for x in fList:
+            if os.path.split(os.path.dirname(x))[1] == "news":
+                return True
+        return False
+    
     # --------------------- In Quicknr() namespace
     # ================================================================
     
@@ -1769,7 +1860,8 @@ function CreateNewsPrevNextLinks() {
             if cliArgs.jsupload: filesToUpload.extend(_get_files_for_upload("js"))
             if cliArgs.fontsupload: filesToUpload.extend(_get_files_for_upload("font"))
             if cliArgs.imgupload: filesToUpload.extend(_get_files_for_upload("img"))
-    if updateNewsList:
+    # Checking updateNewsList only wouldn't always work, must check files list
+    if _check_files_for_news(filesToUpload):
         if not cliArgs:
             filesToUpload.append("public_html/res/js/news.js")
         elif not cliArgs.allupload and not cliArgs.resupload and not cliArgs.jsupload:
