@@ -32,7 +32,7 @@ Version 1.3.0 - 22 March 2016
 * New optional feature: image thumbnails with news post items on the news 
     listing page. Quicknr creates the thumbs if PIL is available.
 * HTML tree indenting improved, the feature is now turned on by default.
-* Random generation of "odd"/"even" classes on floated image blocks removed.
+* Randomness of "odd"/"even" classes on floated image blocks removed.
     This should be handled with CSS, if required.
 * News.js file now always offered for upload to server when news are 
     updated, across restarts.
