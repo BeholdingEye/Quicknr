@@ -10,7 +10,7 @@
 #                       from plain text sources                        #
 #                                                                      #
 #                                                                      #
-#                            Version 1.3.0                             #
+#                            Version 1.4.0                             #
 #                                                                      #
 #            Copyright 2016 Karl Dolenc, beholdingeye.com.             #
 #                         All rights reserved.                         #
@@ -93,7 +93,7 @@ def Quicknr():
     
     """
     
-    print("\n===================== QUICKNR 1.3.0 =====================\n")
+    print("\n===================== QUICKNR 1.4.0 =====================\n")
     
     # --------------------- App defaults
     
@@ -119,10 +119,15 @@ def Quicknr():
                     NEWS_LIST_LINK_POSITION = "END",
                     NEWS_LIST_LINK_PREFIX = "",
                     NEWS_DATE_FORMAT = "%A, %d %B %Y",
+                    NEWS_DATE_FROM_FILENAME = "NO",
                     NEWS_PREV_LINK = "&lt; Older",
                     NEWS_NEXT_LINK = "Newer &gt;",
                     NEWS_LIST_THUMBS = "YES",
                     NEWS_LIST_THUMB_SIZE = "100",
+                    COPY_JAVASCRIPT_FILES = "YES",
+                    JAVASCRIPT_LINK_SPAN = "YES",
+                    JAVASCRIPT_LINK_PRE = "",
+                    JAVASCRIPT_LINK_POST = "",
                     INDENT_HTML_TREE = "YES",
                     DEBUG_ERRORS = "NO",
                     FTP_SERVER = "",
@@ -154,6 +159,9 @@ def Quicknr():
     # Prepare list for <pre> handling
     preContentL = []
     
+    # Prepare list for Javascript link function argument handling
+    jsLinkContentL = []
+    
     # Boolean toggle for 'page_sources/news.txt' updating conversion
     updateNewsList = False
     
@@ -167,12 +175,12 @@ def Quicknr():
 
 function CreateNewsPrevNextLinks() {
     // Check if we're in news folder
-    wHref = window.location.href;
-    wDirPath = wHref.substr(0,wHref.lastIndexOf("/"));
-    wDir = wDirPath.substr(wDirPath.lastIndexOf("/")+1);
+    var wHref = window.location.href;
+    var wDirPath = wHref.substr(0,wHref.lastIndexOf("/"));
+    var wDir = wDirPath.substr(wDirPath.lastIndexOf("/")+1);
     if ((wDir == "news") && (news_files_list.length > 1)) {
-        prevLink = "";
-        nextLink = "";
+        var prevLink = "";
+        var nextLink = "";
         for (var i = 0; i < news_files_list.length; i++) {
             if (window.location.href.split("/").pop() == news_files_list[i]) {
                 // The newest file is first in the list, the oldest last
@@ -191,8 +199,8 @@ function CreateNewsPrevNextLinks() {
                 break;
             }
         }
-        linksDiv = document.getElementsByClassName("news_links")[0];
-        linksDivText = linksDiv.innerHTML;
+        var linksDiv = document.getElementsByClassName("news_links")[0];
+        var linksDivText = linksDiv.innerHTML;
         if (prevLink != "") {
             prevLink = '\\n<span class="prev_link"><a href="'+prevLink+'">'+news_prev_link_text+'</a></span>';
             linksDivText = prevLink + linksDivText;
@@ -222,6 +230,10 @@ function CreateNewsPrevNextLinks() {
         argParser.add_argument("-c","--convertall", # Bool optional argument
                             action="store_true", # Avoid None
                             help="Mark all sources as changed and to be converted to HTML again")
+        # Enter Tools mode, for various admin tasks
+        argParser.add_argument("-t","--tools", # Bool optional argument
+                            action="store_true", # Avoid None
+                            help="Enter Tools mode, to perform various admin tasks")
         # Upload resources as well
         argParser.add_argument("-r","--resupload", # Bool optional argument
                             action="store_true", # Avoid None
@@ -300,6 +312,8 @@ function CreateNewsPrevNextLinks() {
         print(menu)
         while True:
             wI = input(userPrompt)
+            if not wI and len(inputList) > 1:
+                return None
             if not wI and len(inputList) == 1:
                 wI = "1" # Must be string
             if wI in "qQ": return None
@@ -360,8 +374,8 @@ function CreateNewsPrevNextLinks() {
             r = _ui_get_full_website_name(prompt) # User may quit
             while True:
                 r1 = input( "\nEnter the website FOLDER name, using alphanumerical characters and\n"
-                            "the underscore (A-Za-z0-9_) only and no spaces (or Q to quit).\n"
-                            "Choose the name well, website folder names cannot be changed later: ")
+                            "  the underscore (A-Za-z0-9_) only and no spaces (or Q to quit).\n"
+                            "  Choose the name well, website folder names cannot be changed later: ")
                 if not r1 or r1 in "qQ": _say_quit()
                 if len(r1) > 50:
                     print("  Error: Website folder name cannot exceed 50 characters.")
@@ -385,6 +399,16 @@ function CreateNewsPrevNextLinks() {
             # --------------------- Copy Quicknr config folder to website
             cPath = os.path.join(qnrDir, "websites/" + r1 + "/config")
             shutil.copytree(os.path.join(qnrDir, "config"), cPath)
+            # --------------------- Copy any user javascript files to website
+            if CD["COPY_JAVASCRIPT_FILES"] == "YES":
+                for x in ["javascript", "Javascript"]:
+                    if os.path.exists(os.path.join(qnrDir, x)):
+                        jsPath = os.path.join(qnrDir, 
+                                    "websites/" + r1 + "/public_html/res/js")
+                        # Copying function requires that dir not exist yet
+                        os.rmdir(jsPath) # Expects empty dir, good
+                        shutil.copytree(os.path.join(qnrDir, x), jsPath)
+                        break
             # --------------------- Create news.js file
             with open(os.path.join(qnrDir, 
                                     "websites/" + r1 + "/public_html/res/js/news.js"), 
@@ -594,10 +618,15 @@ function CreateNewsPrevNextLinks() {
             _ve("NEWS_LIST_LINK_POSITION")
         # News list link prefix can be empty, no validation
         if not CD["NEWS_DATE_FORMAT"].strip(): _ve("NEWS_DATE_FORMAT")
+        if CD["NEWS_DATE_FROM_FILENAME"] not in ["YES","NO"]: _ve("NEWS_DATE_FROM_FILENAME")
         if not CD["NEWS_PREV_LINK"].strip(): _ve("NEWS_PREV_LINK")
         if not CD["NEWS_NEXT_LINK"].strip(): _ve("NEWS_NEXT_LINK")
         if CD["NEWS_LIST_THUMBS"] not in ["YES","NO"]: _ve("NEWS_LIST_THUMBS")
         if not re.match(r"\d+\Z", CD["NEWS_LIST_THUMB_SIZE"]): _ve("NEWS_LIST_THUMB_SIZE")
+        if CD["COPY_JAVASCRIPT_FILES"] not in ["YES","NO"]: _ve("COPY_JAVASCRIPT_FILES")
+        if CD["JAVASCRIPT_LINK_SPAN"] not in ["YES","NO"]: _ve("JAVASCRIPT_LINK_SPAN")
+        if "\\" in CD["JAVASCRIPT_LINK_PRE"]: ve("JAVASCRIPT_LINK_PRE")
+        if "\\" in CD["JAVASCRIPT_LINK_POST"]: ve("JAVASCRIPT_LINK_POST")
         if CD["INDENT_HTML_TREE"] not in ["YES","NO"]: _ve("INDENT_HTML_TREE")
         if CD["DEBUG_ERRORS"] not in ["YES","NO"]: _ve("DEBUG_ERRORS")
         # Leave out server values
@@ -653,6 +682,8 @@ function CreateNewsPrevNextLinks() {
             CD["NEWS_LIST_LINK_PREFIX"] = re.search(r"(?m)^NEWS_LIST_LINK_PREFIX:"+rP,cT).group(1)
         if re.search(r"(?m)^NEWS_DATE_FORMAT:",cT):
             CD["NEWS_DATE_FORMAT"] = re.search(r"(?m)^NEWS_DATE_FORMAT:"+rP,cT).group(1)
+        if re.search(r"(?m)^NEWS_DATE_FROM_FILENAME:",cT):
+            CD["NEWS_DATE_FROM_FILENAME"] = re.search(r"(?m)^NEWS_DATE_FROM_FILENAME:"+rP,cT).group(1)
         if re.search(r"(?m)^NEWS_PREV_LINK:",cT):
             CD["NEWS_PREV_LINK"] = re.search(r"(?m)^NEWS_PREV_LINK:"+rP,cT).group(1)
         if re.search(r"(?m)^NEWS_NEXT_LINK:",cT):
@@ -661,6 +692,14 @@ function CreateNewsPrevNextLinks() {
             CD["NEWS_LIST_THUMBS"] = re.search(r"(?m)^NEWS_LIST_THUMBS:"+rP,cT).group(1)
         if re.search(r"(?m)^NEWS_LIST_THUMB_SIZE:",cT):
             CD["NEWS_LIST_THUMB_SIZE"] = re.search(r"(?m)^NEWS_LIST_THUMB_SIZE:"+rP,cT).group(1)
+        if re.search(r"(?m)^COPY_JAVASCRIPT_FILES:",cT):
+            CD["COPY_JAVASCRIPT_FILES"] = re.search(r"(?m)^COPY_JAVASCRIPT_FILES:"+rP,cT).group(1)
+        if re.search(r"(?m)^JAVASCRIPT_LINK_SPAN:",cT):
+            CD["JAVASCRIPT_LINK_SPAN"] = re.search(r"(?m)^JAVASCRIPT_LINK_SPAN:"+rP,cT).group(1)
+        if re.search(r"(?m)^JAVASCRIPT_LINK_PRE:",cT):
+            CD["JAVASCRIPT_LINK_PRE"] = re.search(r"(?m)^JAVASCRIPT_LINK_PRE:"+rP,cT).group(1)
+        if re.search(r"(?m)^JAVASCRIPT_LINK_POST:",cT):
+            CD["JAVASCRIPT_LINK_POST"] = re.search(r"(?m)^JAVASCRIPT_LINK_POST:"+rP,cT).group(1)
         if re.search(r"(?m)^INDENT_HTML_TREE:",cT):
             CD["INDENT_HTML_TREE"] = re.search(r"(?m)^INDENT_HTML_TREE:"+rP,cT).group(1)
         if re.search(r"(?m)^DEBUG_ERRORS:",cT):
@@ -814,6 +853,18 @@ function CreateNewsPrevNextLinks() {
         """
         # --------------------- Links
         if re.search(r"\[.+?\]", rT):
+            
+            # Javascript links as <span>
+            if CD["JAVASCRIPT_LINK_SPAN"] == "YES":                
+                x = '<span class="js_call" onclick="'+CD["JAVASCRIPT_LINK_PRE"]
+                x += '\\2'+CD["JAVASCRIPT_LINK_POST"]+'">\\1</span>'
+                rT = re.sub(r"\[(.+?)[ ]+([^ \(\):]+\([^ \(\)]*\))\]", x, rT)
+                
+                x = '<span class="js_call" onclick="'+CD["JAVASCRIPT_LINK_PRE"]
+                x += '\\1'+CD["JAVASCRIPT_LINK_POST"]+'"> </span>'
+                rT = re.sub(r"\[([^ \(\):]+\([^ \(\)]*\))\]", x, rT)
+                
+            # Regular links as <a>
             rT = re.sub(r"\[(.+?)[ ]+(\S+?)\]", r'<a href="\2">\1</a>', rT)
             rT = re.sub(r"\[(\S+?)\]", r'<a href="\1">\1</a>', rT)
             
@@ -866,6 +917,7 @@ function CreateNewsPrevNextLinks() {
         """
         nonlocal CD
         nonlocal preContentL
+        nonlocal jsLinkContentL
         
         if markdownModule and (fX == ".mdml" or CD["QLM_OR_MARKDOWN"] == "MARKDOWN"):
             # A compromise attempt at titling a Markdown page: first para up to 80 chars
@@ -892,7 +944,7 @@ function CreateNewsPrevNextLinks() {
         
         def _link_type(sT):
             """
-            Return link type of text: link, image, YTvideo, unknown
+            Return link type of text: link, image, YTvideo
             
             """
             if "youtube" in sT.lower() or "youtu.be" in sT.lower(): return "YTvideo"
@@ -917,6 +969,12 @@ function CreateNewsPrevNextLinks() {
                 preContentL.append(x)
         if preContentL:
             nT = re.sub(r"(?mi)(^code(?:-\w+)?:\s)(.+\n)+(?=\n)", r"\1Quicknr?=preText=?Quicknr\n", nT)
+        # Protect Javascript link function arguments, into their list
+        for x in nT.strip().split("\n\n"):
+            for y in re.finditer(r"\[[^\[\]\n]+\(([^\n]*?)\);?\]",x):
+                jsLinkContentL.append(y.group(1))
+        if jsLinkContentL:
+            nT = re.sub(r"(?m)(\[[^\[\]\n]+\()[^\n]*?(\);?\])", r"\1Quicknr?=jsLinkArgs=?Quicknr\2", nT)
         # Delete trailing spaces (not line breaks)
         nT = re.sub(r"(?m)[ ]+$", "", nT)
         # Delete spaces within [] boundaries
@@ -1009,8 +1067,14 @@ function CreateNewsPrevNextLinks() {
                         # Handle different link block types
                         if linkType == "link":
                             pCount += 1
-                            pT = '<p class="p_{} link_p {} section_{}">\n<a href="{}">{}</a>\n</p>'
-                            pT = pT.format(pCount,pCount%2 and "odd" or "even",sCount,linkURL,linkText)
+                            if CD["JAVASCRIPT_LINK_SPAN"] == "YES" and re.match(r"[^():]+\([^()]*\)",linkURL):
+                                if linkText == linkURL: linkText = " " # Prevent empty tag
+                                linkURL = CD["JAVASCRIPT_LINK_PRE"] + linkURL + CD["JAVASCRIPT_LINK_POST"]
+                                pT = '<p class="p_{} link_p {} section_{}">\n<span class="js_call" onclick="{}">{}</span>\n</p>'
+                                pT = pT.format(pCount,pCount%2 and "odd" or "even",sCount,linkURL,linkText)
+                            else:
+                                pT = '<p class="p_{} link_p {} section_{}">\n<a href="{}">{}</a>\n</p>'
+                                pT = pT.format(pCount,pCount%2 and "odd" or "even",sCount,linkURL,linkText)
                         elif linkType == "image":
                             clickLinkURL = "" # Handle images as links
                             if "Quicknr?=IL=?Quicknr" in linkURL:
@@ -1023,7 +1087,12 @@ function CreateNewsPrevNextLinks() {
                             iCount += 1
                             pT = '<div class="imgblock imgblock_{} {} section_{}">\n'
                             if clickLinkURL:
-                                pT = '<div class="imgblock link_img imgblock_{} {} section_{}">\n<a href="{}">\n'
+                                if CD["JAVASCRIPT_LINK_SPAN"] == "YES" and re.match(r"[^():]+\([^()]*\)",clickLinkURL):
+                                    clickLinkURL = CD["JAVASCRIPT_LINK_PRE"] + clickLinkURL + CD["JAVASCRIPT_LINK_POST"]
+                                    pT = '<div class="imgblock link_img imgblock_{} {} section_{}">\n<span class="js_call"'
+                                    pT += ' onclick="{}">\n'
+                                else:
+                                    pT = '<div class="imgblock link_img imgblock_{} {} section_{}">\n<a href="{}">\n'
                             pT += '<img src="{}" alt="{}" />\n'
                             if clickLinkURL:
                                 pT = pT.format(iCount,iCount%2 and "odd" or "even",
@@ -1031,7 +1100,11 @@ function CreateNewsPrevNextLinks() {
                             else:
                                 pT = pT.format(iCount,iCount%2 and "odd" or "even",
                                                 sCount,linkURL,linkText)
-                            if clickLinkURL: pT += '</a>\n'
+                            if clickLinkURL:
+                                if '<span class="js_call"' in pT:
+                                    pT += '</span>\n'
+                                else:
+                                    pT += '</a>\n'
                             if linkText: pT += '<p class="imgcaption">\n{}\n</p>\n'.format(linkText)
                             pT += '</div>'
                         elif linkType == "YTvideo":
@@ -1108,7 +1181,12 @@ function CreateNewsPrevNextLinks() {
                         fCount += 1;
                         ipT = '<div class="imgfloat imgfloat_{} {} section_{}">\n'
                         if clickLinkURL:
-                            ipT = '<div class="imgfloat link_img imgfloat_{} {} section_{}">\n<a href="{}">\n'
+                            if CD["JAVASCRIPT_LINK_SPAN"] == "YES" and re.match(r"[^():]+\([^()]*\)",clickLinkURL):
+                                clickLinkURL = CD["JAVASCRIPT_LINK_PRE"] + clickLinkURL + CD["JAVASCRIPT_LINK_POST"]
+                                ipT = '<div class="imgfloat link_img imgfloat_{} {} section_{}">\n<span class="js_call"'
+                                ipT += ' onclick="{}">\n'
+                            else:
+                                ipT = '<div class="imgfloat link_img imgfloat_{} {} section_{}">\n<a href="{}">\n'
                         ipT += '<img src="{}" alt="{}" />\n'
                         if clickLinkURL:
                             ipT = ipT.format(fCount,fCount%2 and "odd" or "even",sCount,
@@ -1116,7 +1194,11 @@ function CreateNewsPrevNextLinks() {
                         else:
                             ipT = ipT.format(fCount,fCount%2 and "odd" or "even",sCount,
                                                         linkURL,linkText)
-                        if clickLinkURL: ipT += '</a>\n'
+                        if clickLinkURL:
+                            if '<span class="js_call"' in ipT:
+                                ipT += '</span>\n'
+                            else:
+                                ipT += '</a>\n'
                         if linkText: ipT += '<p class="imgcaption">\n{}\n</p>\n'.format(linkText)
                         ipT += '</div>'
                         # Text part of paragraph
@@ -1148,6 +1230,8 @@ function CreateNewsPrevNextLinks() {
                     blocks[i+1][0] += '\n</div>'
             rT += x[0] + "\n"
         
+        # --------------------- Delete empty sections
+        rT = re.sub(r"\s*<div [^>]+>\s*</div>", "", rT)
         # --------------------- Process inline markup
         rT = _process_inline_markup(rT)
         
@@ -1158,8 +1242,10 @@ function CreateNewsPrevNextLinks() {
         hCode = ""
         if os.path.split(os.path.dirname(CD["sourceFilePath"]))[1] == "news":
             hCode = '<div class="news_links">\n<span class="listing_link">'
-            hCode += '<a href="../news.html">{}{}</a></span>\n</div>\n'
-            hCode = hCode.format(html.escape(CD["NEWS_LIST_LINK_PREFIX"],quote=False),CD["NEWS_LIST_TITLE"])
+            hCode += '<a href="../news{}">{}{}</a></span>\n</div>\n'
+            hCode = hCode.format(   CD["PAGE_FILE_EXTENSION"],
+                                    html.escape(CD["NEWS_LIST_LINK_PREFIX"],quote=False),
+                                    CD["NEWS_LIST_TITLE"])
         if CD["NEWS_LIST_LINK_POSITION"] == "START":
             rT = "<div class=\"user_content "+docN+"\">\n"+hCode+rT+"</div>\n"
         else:
@@ -1188,6 +1274,48 @@ function CreateNewsPrevNextLinks() {
                 _data_file_corrupted_quit(CD["siteFolder"])
         else: return None
     
+    def _get_date_from_filename(filePath, mode="record"):
+        """
+        Returns string-formatted date from filename of filePath, if named in
+        this format, with first word as YYYYMMDD:
+        
+            20160401-april-fools-joke.txt
+        
+        Returns today's date if the first word of the filename is not a date, 
+        or throws an error if date numbers are in an invalid range
+        
+        The date is formatted according to mode, "record", "news_list" or "news_stamp"
+        
+        """
+        mo = re.match(r"\d{8}(?=\D)", os.path.basename(filePath))
+        if mo:
+            dY = int(mo.group()[:4])
+            dM = int(mo.group()[4:6])
+            dD = int(mo.group()[6:8])
+            try:
+                if mode == "record":
+                    # Construct date component from filename
+                    dDate = dt.datetime(dY, dM, dD).strftime("%Y-%m-%d")
+                    # Set the time component to present time
+                    dTime = dt.datetime.now().strftime("_%H-%M-%S")
+                    return dDate + dTime
+                elif mode == "news_stamp":
+                    return dt.datetime(dY, dM, dD).strftime(CD["NEWS_DATE_FORMAT"])
+                elif mode == "news_list":
+                    return dt.datetime(dY, dM, dD).strftime("%Y-%b-%d")
+            except Exception as e: # In case the date cannot be constructed from filename
+                print("Error: Invalid date in filename '"+os.path.basename(filePath)+"':")
+                print(e)
+                _say_quit()
+        else:
+            # Date not in filename, return today's
+            if mode == "record":
+                return dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            elif mode == "news_stamp":
+                return dt.date.today().strftime(CD["NEWS_DATE_FORMAT"])
+            elif mode == "news_list":
+                return dt.date.today().strftime("%Y-%b-%d")
+    
     def _news_date_stamp(text, wdataT):
         """
         Inserts the current date, in a format set by the configuration, at the
@@ -1203,7 +1331,11 @@ function CreateNewsPrevNextLinks() {
             dDate = _get_file_record_date(CD["sourceFilePath"], wdataT)
             if dDate:
                 dTime = dDate.strftime(CD["NEWS_DATE_FORMAT"])
-            else: dTime = dt.date.today().strftime(CD["NEWS_DATE_FORMAT"])
+            else:
+                if CD["NEWS_DATE_FROM_FILENAME"] == "YES":
+                    dTime = _get_date_from_filename(CD["sourceFilePath"],mode="news_stamp")
+                else:
+                    dTime = dt.date.today().strftime(CD["NEWS_DATE_FORMAT"])
             rT = re.sub(r"(<div class=\"user_content[^>\"]*?\">)", 
                             r'\1\n<p class="news_date_stamp">\n{}\n</p>'.format(dTime), text)
             return rT
@@ -1253,6 +1385,7 @@ function CreateNewsPrevNextLinks() {
         """
         nonlocal CD
         nonlocal preContentL
+        nonlocal jsLinkContentL
         
         # Execute user functions file
         if os.path.exists(os.path.join(CD["siteDir"], "config/user_functions.py")):
@@ -1275,7 +1408,7 @@ function CreateNewsPrevNextLinks() {
             else:
                 sLxNC1.append(x)
         oNL.sort()
-        nNL.sort() # Might be worth it if named well
+        nNL.sort() # Might be worth it if named well (would be if dating from filename)
         sLxNC1.sort()
         sLxNC1.extend([y for x, y in oNL])
         sLxNC1.extend(nNL)
@@ -1293,6 +1426,7 @@ function CreateNewsPrevNextLinks() {
                 print("       File '%s' not converted, Markdown not supported for news." % relfxNC)
                 continue
             preContentL = [] # Clear list of <pre> instances
+            jsLinkContentL = [] # Ditto js link args
             docType = "" # Clear docType declaration
             print("\n  Converting to HTML (file {} of {}):".format(i+1, len(sLxNC)))
             print("       " + relfxNC)
@@ -1390,6 +1524,11 @@ function CreateNewsPrevNextLinks() {
                 for x in preContentL:
                     #x = html.escape(x, quote=False) # Done already
                     hT = hT.replace(">Quicknr?=preText=?Quicknr</pre>", ">" + x + "</pre>", 1)
+            # Bring in Javascript link argument text (protected earlier)
+            if jsLinkContentL:
+                for x in jsLinkContentL:
+                    #x = html.escape(x, quote=False) # Done already
+                    hT = hT.replace("(Quicknr?=jsLinkArgs=?Quicknr)", "(" + x + ")", 1)
             # Last correction, for overzealous char entity conversion of &
             hT = re.sub(r"&amp;([A-Za-z0-9#]{2,8};)", r"&\1", hT)
             # Remove whitespace around &nbsp;
@@ -1430,12 +1569,17 @@ function CreateNewsPrevNextLinks() {
                 nhFP += " "
                 nhPath = os.path.relpath(CD["htmlFilePath"], htmlDirs[0])
                 if nhImg: nhImg += "[" + nhPath + "] " # Make thumb link to post
-                # Date: get record or today's
+                # Date: get record or from filename or today's
                 dD = _get_file_record_date(fxNC, wdataT)
-                if not dD:
-                    dD = dt.date.today()
+                if dD:
+                    dDS = dD.strftime("%Y-%b-%d")
+                else:
+                    if CD["NEWS_DATE_FROM_FILENAME"] == "YES":
+                        dDS = _get_date_from_filename(fxNC, mode="news_list")
+                    else:
+                        dDS = dt.date.today().strftime("%Y-%b-%d")
                 # Construct news listing item; linked heading and a para: title, img & intro
-                nhNItem = "   _"+dD.strftime("%Y-%b-%d")+"_ ["+nhTitle+" "+nhPath+"]\n\n"+\
+                nhNItem = "   _"+dDS+"_ ["+nhTitle+" "+nhPath+"]\n\n"+\
                                     nhImg+nhFP+"["+CD["NEWS_MORE_PHRASE"]+" "+nhPath+"]"
                 # --------------------- News listing source file
                 nlT = ""
@@ -1495,7 +1639,11 @@ function CreateNewsPrevNextLinks() {
                 # Get date of old news file instead of using today's
                 if os.path.split(os.path.dirname(x))[1] == "news":
                     dD = _get_file_record_date(os.path.join(CD["siteDir"], x), fT)
-                    if dD: d = dD.strftime("%Y-%m-%d_%H-%M-%S")
+                    if dD:
+                        d = dD.strftime("%Y-%m-%d_%H-%M-%S")
+                    else: # New news file, no recorded date
+                        if CD["NEWS_DATE_FROM_FILENAME"] == "YES":
+                            d = _get_date_from_filename(x, mode="record")
                 nfRecords.append(x+"\t"+d+"\t"+sF+"\t"+hF)
             if fTL: # Check for matching file names
                 if x in fT:
@@ -1576,9 +1724,16 @@ function CreateNewsPrevNextLinks() {
             with open(qnrDataPath, mode="w") as f: f.write(fT)
         return recordsToUpload
     
-    def _upload_files(recordsToUpload, qnrDataPath):
+    def _manage_server_files(recordsToUse, workMode, qnrDataPath):
         """
-        Uploads files to server and updates data file
+        If workMode = "upload"
+            uploads files to server and updates data file
+            recordsToUse are expected to be data records
+                or file paths relative to siteDir
+        
+        If workMode = "delete"
+            deletes files
+            recordsToUse are expected to be file paths relative to siteDir
         
         """
         if not CD["FTP_SERVER"] or not CD["FTP_USERNAME"] or not CD["FTP_PATH"]:
@@ -1595,17 +1750,20 @@ function CreateNewsPrevNextLinks() {
                 if CD["FTP_DEBUG"] == "1" or CD["FTP_DEBUG"] == "2":
                     fc.set_debuglevel(int(CD["FTP_DEBUG"]))
                 print("\n"+fc.getwelcome())
-                # Will throw error if path not exist, cannot create dir
+                # Will throw error if path does not exist, cannot create dir
                 fc.cwd(CD["FTP_PATH"])
                 print("\n"+fc.pwd())
                 fc.dir(); print("")
-                for x in recordsToUpload:
-                    if x in fT: fP = x.split("\t", 1)[0]
-                    else: fP = x[:] # Copy
+                for x in recordsToUse:
+                    if workMode == "upload":
+                        if x in fT: fP = x.split("\t", 1)[0]
+                        else: fP = x[:] # Copy
+                    elif workMode == "delete":
+                        fP = x[:]
                     fN = os.path.basename(fP); fD = os.path.dirname(fP)
                     # --------------------- Get sub-folders
                     subDs = []; splitfD = [fD]
-                    if os.path.split(fD)[0]: # Head and tail
+                    if os.path.split(fD)[0]: # Head and tail, slash char in fD
                         while True:
                             splitfD = os.path.split(splitfD[0])
                             if splitfD[0]: subDs.append(splitfD[1])
@@ -1614,24 +1772,41 @@ function CreateNewsPrevNextLinks() {
                         for a in subDs:
                             try: fc.cwd(a)
                             except:
-                                fc.mkd(a)
-                                fc.cwd(a)
-                    # --------------------- Upload
+                                if workMode == "upload":
+                                    fc.mkd(a)
+                                    fc.cwd(a)
+                                elif workMode == "delete":
+                                    fc.quit()
+                                    _say_error( "Error: Directory '"+a+"' not found on server.\n"+\
+                                                "       File '"+x+"' not deleted.\n"+\
+                                                "       Quit.\n")
                     print("\n"+fc.pwd())
-                    print("  Uploading file '{}' ...".format(fP), end="")
-                    with open(os.path.join(CD["siteDir"], fP), mode="rb") as uf:
-                        fc.storbinary("STOR "+fN, uf)
+                    if workMode == "upload":
+                        # --------------------- Upload
+                        print("  Uploading file '{}' ...".format(fP), end="")
+                        with open(os.path.join(CD["siteDir"], fP), mode="rb") as uf:
+                            fc.storbinary("STOR "+fN, uf)
+                            print(" Done.")
+                    elif workMode == "delete":
+                        # --------------------- Delete
+                        print("  Deleting file '{}' ...".format(fP), end="")
+                        fc.delete(fN)
                         print(" Done.")
                     if subDs: fc.cwd("../"*len(subDs))
-                    # --------------------- Update data file
-                    if x in fT and "\t" in x: # Separate out argparse files
-                        parts = fT.partition(x) # x is whole line from record
-                        fT = parts[0]+parts[1].rsplit("\t", 1)[0]+"\tUP"+parts[2]
+                    if workMode == "upload":
+                        # --------------------- Update data file
+                        if x in fT and "\t" in x: # Separate out argparse files
+                            parts = fT.partition(x) # x is whole line from record
+                            fT = parts[0]+parts[1].rsplit("\t", 1)[0]+"\tUP"+parts[2]
         except Exception as e:
             print(e) # No need for full trace, just print the error
+            _say_quit()
         else:
-            with open(qnrDataPath, mode="w") as f: f.write(fT)
-            print("\nUploading completed.")
+            if workMode == "upload":
+                with open(qnrDataPath, mode="w") as f: f.write(fT)
+                print("\nUploading completed.")
+            elif workMode == "delete":
+                print("\nFile deletion from server completed.")
     
     def _mark_all_changed(wdT):
         """
@@ -1649,7 +1824,7 @@ function CreateNewsPrevNextLinks() {
                 xL = x.split("\t")
                 if re.match(r".?page_sources", xL[0]) and os.path.splitext(xL[0])[1] in xts:
                     # Change recorded file size to 0
-                    wL[i] = xL[0] + "\t" + xL[1] + "\t" + "0" + "\t" + "\t".join(xL[3:])
+                    wL[i] = xL[0] + "\t" + xL[1] + "\t0\t" + "\t".join(xL[3:])
                     changed = True
         if changed: return "\n".join(wL) + "\n"
         else: return wdT
@@ -1750,14 +1925,184 @@ function CreateNewsPrevNextLinks() {
         
         """
         for x in fList:
-            if os.path.split(os.path.dirname(x))[1] == "news":
+            if "\t" in x: x = x.split("\t", maxsplit=1)[0]
+            if os.path.split(os.path.dirname(x))[1] == "news" or \
+                        os.path.splitext(os.path.basename(x))[0] == "news":
                 return True
         return False
+    
+    
+    # --------------------- TOOLS MODE ---------------------
+    
+    def _tool_delete_news_post(qnrDataPath):
+        """
+        Deletes a news post by deleting:
+            * source text file
+            * converted HTML file, if any
+            * news item from news listing file
+            * record from list in news.js
+            * record from data file
+            * if uploaded already, HTML file from server
+        
+        """
+        filesToDelete = []
+        nfL = os.listdir(os.path.join(CD["siteDir"], "page_sources/news"))
+        if len(nfL) == 0:
+            _say_error("Error: No news posts to delete.\n       Quit.")
+        elif len(nfL) < 2:
+            _say_error( "Error: A news post cannot be deleted if no others would remain.\n"
+                        "       Create another first, then try again.\n"
+                        "       Quit.")
+        nfL.sort(reverse=True) # Good naming strategy is assumed...
+        nfL = nfL[:99] # Shorten file list to what UI can handle
+        print("")
+        prompt = "Enter the number of the news post to delete (or Q to quit): "
+        delF = _ui_list_menu(nfL, "Delete News Post", prompt)
+        if not delF: _say_quit()
+        filesToDelete.append(os.path.join(CD["siteDir"], "page_sources/news/"+delF))
+        # Find HTML counterpart
+        for x in os.listdir(os.path.join(CD["siteDir"], "public_html/news")):
+            if os.path.splitext(x)[0] == os.path.splitext(delF)[0]:
+                filesToDelete.append(os.path.join(CD["siteDir"], "public_html/news/"+x))
+                break
+        print("\nYou are about to delete:\n")
+        for x in filesToDelete:
+            print("  "+os.path.relpath(x, os.path.join(qnrDir, "websites/")))
+        print("\n    This action CANNOT be undone!\n")
+        while True:
+            r = input(  "Enter Y to DELETE the file"
+                        "{}(or Q to quit): ".format(len(filesToDelete)%2 and " " or "s locally and from the server "))
+            if not r or r in "qQ": _say_quit()
+            elif r in "yY": break
+        # --------------------- Delete files
+        print("")
+        relSFP = os.path.relpath(filesToDelete[0], CD["siteDir"])
+        with open(qnrDataPath, mode="r") as f: qdT = f.read()
+        qdTL = qdT.splitlines()
+        # If HTML file exists, check if uploaded, attempt deletion on server or quit
+        if len(filesToDelete) > 1:
+            relHFP = os.path.relpath(filesToDelete[1], CD["siteDir"])
+            for i, x in enumerate(qdTL):
+                if relHFP in x:
+                    if x.rsplit("\t", maxsplit=1)[1] == "UP":
+                        # Quit if unable to delete (no connection usually)
+                        _manage_server_files([relHFP], "delete", qnrDataPath)
+                    del qdTL[i]
+                    break
+        # Delete source file from data
+        for i, x in enumerate(qdTL):
+            if relSFP in x:
+                del qdTL[i]
+                break
+        # Save modified data file
+        qdT = "\n".join(qdTL)
+        if qdT[-1] != "\n": qdT += "\n" # Because splitlines() != split()
+        with open(qnrDataPath, mode="w") as f: f.write(qdT)
+        # Delete files locally
+        for x in filesToDelete: os.remove(x)
+        if len(filesToDelete) > 1:
+            # Delete item from news listing
+            newsListFP = os.path.join(CD["siteDir"], "page_sources/news.txt")
+            newsHFP = os.path.relpath(filesToDelete[1], 
+                            os.path.join(CD["siteDir"], "public_html/"))
+            if os.path.exists(newsListFP):
+                with open(newsListFP, mode="r") as f: nlT = f.read()
+                if newsHFP in nlT:
+                    nlTL = nlT.split("\n\n")
+                    for i, x in enumerate(nlTL):
+                        if newsHFP in x: # Found in title
+                            del nlTL[i] # Delete title and blurb
+                            del nlTL[i]
+                            nlT = "\n\n".join(nlTL)
+                            break
+                    with open(newsListFP, mode="w") as f: f.write(nlT)
+            # Delete item from news.js
+            njsFP = os.path.join(CD["siteDir"], "public_html/res/js/news.js")
+            with open(njsFP, mode="r") as f: njsT = f.read()
+            hFN = os.path.basename(filesToDelete[1])
+            njsT1, njsT2 = njsT.split("//==DO_NOT_EDIT_THIS_LINE")
+            njsT1a, njsT1b = njsT1.split("var news_files_list = [")
+            if hFN in njsT1b:
+                njsT1b = njsT1b.replace(hFN, "")
+                njsT1b = re.sub(', ""', "", njsT1b)
+                njsT1b = re.sub('"", ', "", njsT1b)
+                njsT =  njsT1a + \
+                        "var news_files_list = [" + \
+                        njsT1b + \
+                        "//==DO_NOT_EDIT_THIS_LINE" + \
+                        njsT2
+                with open(njsFP, mode="w") as f: f.write(njsT)
+        # Done
+        print(  "\nNews post deletion completed.\n\n"
+                "  Run Quicknr again, not in Tools mode, to update the news listing\n"
+                "    HTML file and upload it together with 'news.js'.\n")
+    
+    def _tool_upgrade_config_file(qnrDataPath):
+        """
+        Copies settings from the website "config.txt" file to a copy
+        of the Quicknr "config.txt" file, presumed to be the latest version,
+        and saves the result as the website "config.txt" file
+        
+        Any settings that are new in the Quicknr file will now be active in
+        the updated website file, at their default values
+        
+        If there are settings in the website file that are no longer used in
+        the Quicknr file, those settings will be removed from the upgraded
+        website file
+        
+        The result will be a website "config.txt" file that is in sync with the
+        latest Quicknr version, but contains pre-existing user preferences
+        
+        The old website file will be kept as a backup
+        
+        """
+        q_configPath = os.path.join(qnrDir, "config/config.txt")
+        w_configPath = os.path.join(CD["siteDir"], "config/config.txt")
+        with open(q_configPath, mode="r") as f: qT = f.read()
+        with open(w_configPath, mode="r") as f: wT = f.read()
+        # Regular settings
+        # The following regex features the harmless bug of replacing the middle quote
+        # in the first set of triple quotes used by snippets
+        for mo in re.finditer(r"(?m)^([A-Z_]+):[ ]+['\"]?(.*?)['\"]?[ ]*$", wT):
+            qT = re.sub(r"(?m)^("+mo.group(1)+r"):[ ]+(['\"]?).*?\2[ ]*$", 
+                                    "\\1: \\g<2>"+mo.group(2).replace("\\","\\\\")+"\\2", qT)
+        # Snippets
+        for mo in re.finditer(r"(?ms)^([A-Z_]+):[ ]+['\"]{3}(.*?)['\"]{3}[ ]*$", wT):
+            qT = re.sub(r"(?ms)^"+mo.group(1)+r":[ ]+(['\"]{3}).*?\1[ ]*$", 
+                            mo.group(1)+': """'+mo.group(2).replace("\\","\\\\")+'"""', qT)
+        # Backup website file
+        shutil.copy2(w_configPath, os.path.join(CD["siteDir"], "config/config_old_backup.txt"))
+        # Paranoid mode, check backup is fine
+        with open(os.path.join(CD["siteDir"], "config/config_old_backup.txt"), mode="r") as f:
+            fT = f.read()
+            if fT != wT:
+                _say_error( "Error: Config file upgrade aborted due to problem with backup.\n"
+                            "       Quit.")
+        # Write upgraded website file
+        with open(w_configPath, mode="w") as f: f.write(qT)
+        print('\n  Website "config.txt" file has been upgraded, with your settings retained.\n')
+    
+    def _tools(qnrDataPath):
+        """
+        Tools mode, for various admin tasks
+        
+        """
+        cmdL = [    "Delete a news post",
+                    "Upgrade 'config.txt' file to latest version"   ]
+        prompt = "Enter the number of the command to run (or Q to quit): "
+        toolCmd = _ui_list_menu(cmdL, "Tools", prompt)
+        if not toolCmd: _say_quit()
+        if toolCmd == cmdL[0]:
+            _tool_delete_news_post(qnrDataPath)
+        elif toolCmd == cmdL[1]:
+            _tool_upgrade_config_file(qnrDataPath)
+        print("Quit.")
+        sys.exit()
     
     # --------------------- In Quicknr() namespace
     # ================================================================
     
-    # --------------------- Read commandline arguments, action them
+    # --------------------- Read commandline arguments
     cliArgs = None
     if len(sys.argv) > 1:
         cliArgs = _parse_cli_args()
@@ -1789,6 +2134,11 @@ function CreateNewsPrevNextLinks() {
                 "  Create the content, then run Quicknr again.\n"
                 "  Quit.")
         sys.exit()
+    
+    # --------------------- Tools mode
+    if cliArgs and cliArgs.tools:
+        _tools(qnrDataPath) # Will quit
+    
     # --------------------- No new or changed sources to convert
     elif not sLxN and not sLxC:
         print("There are no new or updated source files to convert to HTML.")
@@ -1874,8 +2224,8 @@ function CreateNewsPrevNextLinks() {
             r = input("\nEnter Y to UPLOAD the files (or Q to quit): ")
             if not r or r in "qQ": _say_quit()
             elif r in "yY": break
-        _upload_files(filesToUpload, qnrDataPath)
-        if cliArgs and cliArgs.allupload: # Not handled in _upload_files()
+        _manage_server_files(filesToUpload, "upload", qnrDataPath)
+        if cliArgs and cliArgs.allupload: # Not handled in _manage_server_files()
             with open(qnrDataPath, mode="r") as f: fT = f.read()
             fT = re.sub(r"\tNOTUP", r"\tUP", fT)
             with open(qnrDataPath, mode="w") as f: f.write(fT)
