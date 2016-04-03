@@ -27,6 +27,25 @@ Windows, Mac and Linux.
 
 CHANGELOG
 
+Version 1.4.0 - 3 April 2016
+
+* New Tools mode, accessed as a commandline '-t' toggle, with two
+    commands:
+        - Delete a news post:
+            Delete all files, links and records of a news post, locally
+            and from the server.
+        - Upgrade 'config.txt' file to latest version
+            Use this after upgrading to a new Quicknr release, to copy
+            latest 'config.txt' contents to a website, while keeping
+            existing preferences
+* The date of a news post can now be obtained from the first word of a
+    news post filename, if it is in numerical YYYYMMDD format.
+* Javascript links can be made with <span> rather than <a> tags.
+* Custom Javascript files can now be set for import into every website.
+* Fix: news listing page now takes account of file extension preference,
+    is not limited to ".html".
+* A number of other small improvements and fixes.
+
 Version 1.3.0 - 22 March 2016
 
 * New optional feature: image thumbnails with news post items on the news 
