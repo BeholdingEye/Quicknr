@@ -314,20 +314,6 @@ JAVASCRIPT_LINK_POST: ""
 
 ########################################################################
 #                                                                      #
-#                           INDENT HTML TREE                           #
-#                                                                      #
-#  Quicknr uses a standard Python XML parser to nicely indent the      #
-#  HTML tree in a hierarchical manner, making the page source code     #
-#  easier to read. If the parser encounters "badly formed" markup, it  #
-#  will fail and the HTML tree will not be indented.                   #
-#                                                                      #
-#  The feature is by default turned on with the value of YES. Disable  #
-#  with NO.                                                            #
-#                                                                      #
-INDENT_HTML_TREE: YES
-
-########################################################################
-#                                                                      #
 #                             FTP SETTINGS                             #
 #                                                                      #
 #  For uploading to work, FTP_SERVER and FTP_USERNAME must be set      #
