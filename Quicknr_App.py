@@ -10,7 +10,7 @@
 #                       from plain text sources                        #
 #                                                                      #
 #                                                                      #
-#                            Version 1.4.0                             #
+#                            Version 1.5.0                             #
 #                                                                      #
 #            Copyright 2016 Karl Dolenc, beholdingeye.com.             #
 #                         All rights reserved.                         #
@@ -93,7 +93,7 @@ def Quicknr():
     
     """
     
-    print("\n===================== QUICKNR 1.4.0 =====================\n")
+    print("\n===================== QUICKNR 1.5.0 =====================\n")
     
     # --------------------- App defaults
     
@@ -128,7 +128,6 @@ def Quicknr():
                     JAVASCRIPT_LINK_SPAN = "YES",
                     JAVASCRIPT_LINK_PRE = "",
                     JAVASCRIPT_LINK_POST = "",
-                    INDENT_HTML_TREE = "YES",
                     DEBUG_ERRORS = "NO",
                     FTP_SERVER = "",
                     FTP_PATH = "",
@@ -627,7 +626,6 @@ function CreateNewsPrevNextLinks() {
         if CD["JAVASCRIPT_LINK_SPAN"] not in ["YES","NO"]: _ve("JAVASCRIPT_LINK_SPAN")
         if "\\" in CD["JAVASCRIPT_LINK_PRE"]: ve("JAVASCRIPT_LINK_PRE")
         if "\\" in CD["JAVASCRIPT_LINK_POST"]: ve("JAVASCRIPT_LINK_POST")
-        if CD["INDENT_HTML_TREE"] not in ["YES","NO"]: _ve("INDENT_HTML_TREE")
         if CD["DEBUG_ERRORS"] not in ["YES","NO"]: _ve("DEBUG_ERRORS")
         # Leave out server values
         if CD["FTP_DEBUG"] not in ["0","1","2"]: _ve("FTP_DEBUG")
@@ -700,8 +698,6 @@ function CreateNewsPrevNextLinks() {
             CD["JAVASCRIPT_LINK_PRE"] = re.search(r"(?m)^JAVASCRIPT_LINK_PRE:"+rP,cT).group(1)
         if re.search(r"(?m)^JAVASCRIPT_LINK_POST:",cT):
             CD["JAVASCRIPT_LINK_POST"] = re.search(r"(?m)^JAVASCRIPT_LINK_POST:"+rP,cT).group(1)
-        if re.search(r"(?m)^INDENT_HTML_TREE:",cT):
-            CD["INDENT_HTML_TREE"] = re.search(r"(?m)^INDENT_HTML_TREE:"+rP,cT).group(1)
         if re.search(r"(?m)^DEBUG_ERRORS:",cT):
             CD["DEBUG_ERRORS"] = re.search(r"(?m)^DEBUG_ERRORS:"+rP,cT).group(1)
         if re.search(r"(?m)^FTP_SERVER:",cT):
@@ -904,9 +900,9 @@ function CreateNewsPrevNextLinks() {
             r'<span style="font-style:italic"><code>\1</code></span>', rT)
         rT = re.sub(r"(?<=\s)(?:\*|`){2}([^ ][^*`]*?)(?:\*|`){2}(?!\w)", 
             r'<span style="font-weight:bold"><code>\1</code></span>', rT)
-        rT = re.sub(r"(?<=\s)\*([^ ][^*]*)\*(?!\w)", r'<span style="font-weight:bold">\1</span>', rT)
-        rT = re.sub(r"(?<=\s)_([^ ].*?)_(?!\w)", r'<span style="font-style:italic">\1</span>', rT)
-        rT = re.sub(r"(?<=\s)`([^ ][^`]*)`(?!\w)", r"<code>\1</code>", rT)
+        rT = re.sub(r"(?<=\W)\*([^ ][^*]*)\*(?!\w)", r'<span style="font-weight:bold">\1</span>', rT)
+        rT = re.sub(r"(?<=\W)_([^ ].*?)_(?!\w)", r'<span style="font-style:italic">\1</span>', rT)
+        rT = re.sub(r"(?<=\W)`([^ ][^`]*)`(?!\w)", r"<code>\1</code>", rT)
         return rT
         
 
@@ -1032,10 +1028,10 @@ function CreateNewsPrevNextLinks() {
         sCount = 0 # Section/heading counter, 0-indexed for no headings
         for i, b in enumerate(blocks):
             if b[1] == "title":
-                blocks[i][0] = '<h1 class="title">\n%s\n</h1>' % b[0]
+                blocks[i][0] = '<h1 class="title">%s</h1>' % b[0]
             if b[1] == "heading":
                 sCount += 1
-                hhh = '<h2 class="heading {} heading_{}">\n{}\n</h2>'
+                hhh = '<h2 class="heading {} heading_{}">{}</h2>'
                 blocks[i][0] = hhh.format(sCount%2 and "odd" or "even",sCount,b[0]) 
             if b[1] == "section":
                 # Delete leading spaces in section
@@ -1070,10 +1066,10 @@ function CreateNewsPrevNextLinks() {
                             if CD["JAVASCRIPT_LINK_SPAN"] == "YES" and re.match(r"[^():]+\([^()]*\)",linkURL):
                                 if linkText == linkURL: linkText = " " # Prevent empty tag
                                 linkURL = CD["JAVASCRIPT_LINK_PRE"] + linkURL + CD["JAVASCRIPT_LINK_POST"]
-                                pT = '<p class="p_{} link_p {} section_{}">\n<span class="js_call" onclick="{}">{}</span>\n</p>'
+                                pT = '<p class="p_{} link_p {} section_{}"><span class="js_call" onclick="{}">{}</span></p>'
                                 pT = pT.format(pCount,pCount%2 and "odd" or "even",sCount,linkURL,linkText)
                             else:
-                                pT = '<p class="p_{} link_p {} section_{}">\n<a href="{}">{}</a>\n</p>'
+                                pT = '<p class="p_{} link_p {} section_{}"><a href="{}">{}</a></p>'
                                 pT = pT.format(pCount,pCount%2 and "odd" or "even",sCount,linkURL,linkText)
                         elif linkType == "image":
                             clickLinkURL = "" # Handle images as links
@@ -1105,7 +1101,7 @@ function CreateNewsPrevNextLinks() {
                                     pT += '</span>\n'
                                 else:
                                     pT += '</a>\n'
-                            if linkText: pT += '<p class="imgcaption">\n{}\n</p>\n'.format(linkText)
+                            if linkText: pT += '<p class="imgcaption">{}</p>\n'.format(linkText)
                             pT += '</div>'
                         elif linkType == "YTvideo":
                             vCount += 1
@@ -1126,7 +1122,7 @@ function CreateNewsPrevNextLinks() {
                         npT1 = ""
                         for x in re.findall(r"(?m)^\*[ ]+(.+)$", pT):
                             liCount += 1
-                            npT = '<li class="li_{} {}">\n{}\n</li>\n'
+                            npT = '<li class="li_{} {}">{}</li>\n'
                             npT1 += npT.format(liCount, liCount%2 and "odd" or "even", x)
                         pT = '<ul class="list_{} {} section_{}">\n{}</ul>'
                         pT = pT.format(lCount, lCount%2 and "odd" or "even", sCount, npT1)
@@ -1136,7 +1132,7 @@ function CreateNewsPrevNextLinks() {
                         npT1 = ""
                         for x in re.findall(r"(?m)^\d+\.?[ ]+(.+)$", pT):
                             liCount += 1
-                            npT = '<li class="li_{} {}">\n{}\n</li>\n'
+                            npT = '<li class="li_{} {}">{}</li>\n'
                             npT1 += npT.format(liCount, liCount%2 and "odd" or "even", x)
                         pT = '<ol class="list_{} {} section_{}">\n{}</ol>'
                         pT = pT.format(lCount, lCount%2 and "odd" or "even", sCount, npT1)
@@ -1156,7 +1152,7 @@ function CreateNewsPrevNextLinks() {
                         dCount += 1
                         pT1 = pT.split(":", 1)[0]; pT = re.sub(r"\A\S[^:\n]*:\s?", "", pT)
                         npT = '<dl class="{} dlblock dlblock_{} {} section_{}">\n'
-                        npT += '<dt>\n{}\n</dt>\n<dd>\n{}\n</dd>\n</dl>'
+                        npT += '<dt>{}</dt>\n<dd>{}</dd>\n</dl>'
                         dClass = pT1.lower()
                         if " " in dClass: dClass = "definition"
                         pT = npT.format(dClass,dCount,dCount%2 and "odd" or "even",sCount,pT1,pT)
@@ -1199,11 +1195,11 @@ function CreateNewsPrevNextLinks() {
                                 ipT += '</span>\n'
                             else:
                                 ipT += '</a>\n'
-                        if linkText: ipT += '<p class="imgcaption">\n{}\n</p>\n'.format(linkText)
+                        if linkText: ipT += '<p class="imgcaption">{}</p>\n'.format(linkText)
                         ipT += '</div>'
                         # Text part of paragraph
                         pCount += 1
-                        pT = '<p class="p_{} img_p {} section_{}">\n{}\n</p>'
+                        pT = '<p class="p_{} img_p {} section_{}">{}</p>'
                         pT = pT.format(pCount, pCount%2 and "odd" or "even", sCount, ppT)
                         # Image and text combo
                         pT = ipT + "\n" + pT
@@ -1211,7 +1207,7 @@ function CreateNewsPrevNextLinks() {
                     # --------------------- Paragraph
                     else:
                         pCount += 1
-                        npT = '<p class="p_{} {} section_{}">\n{}\n</p>'
+                        npT = '<p class="p_{} {} section_{}">{}</p>'
                         pT = npT.format(pCount,pCount%2 and "odd" or "even",sCount,pT)
                     # Combine with new section
                     nS = nS + pT + "\n"
@@ -1337,7 +1333,7 @@ function CreateNewsPrevNextLinks() {
                 else:
                     dTime = dt.date.today().strftime(CD["NEWS_DATE_FORMAT"])
             rT = re.sub(r"(<div class=\"user_content[^>\"]*?\">)", 
-                            r'\1\n<p class="news_date_stamp">\n{}\n</p>'.format(dTime), text)
+                            r'\1\n<p class="news_date_stamp">{}</p>'.format(dTime), text)
             return rT
         else: return text
     
@@ -1375,6 +1371,60 @@ function CreateNewsPrevNextLinks() {
                 return imgURL
         else:
             return ""
+
+    def _indent_html_tree(text):
+        """
+        Returns HTML text as indented tree
+        
+        """
+        # Record line numbers of lines with opening and closing tags:
+            # For every opener, qualify it by searching for a matching closer:
+                # If closer found, increase indent level for content down from opener
+                # If no closer found, keep indent level as is
+            # For every closer down, decrease indent level for it and for content down
+        # Apply indents to the lines, not if text content
+        
+        # Remove leading whitespace before tags at line starts
+        text = re.sub(r"(?m)^\s+(<)", r"\1", text)
+        
+        indentsL = []
+        indentLevel = 0
+        tL = text.splitlines()
+        for i, tLine in enumerate(tL):
+            mo = re.match(r"<(\w+|!--)", tLine)
+            if mo:
+                if "</"+mo.group(1)+">" not in tLine: # Not closed inline
+                    if len(tL) > i+1: # Account for possibly last line (redundant?)
+                        mo1 = re.search(r"(?m)^</"+mo.group(1)+">", "\n".join(tL[i+1:]))
+                        if mo1:
+                            # Check for an inline closer before mo1, not a nester
+                            checkT = "\n".join(tL[i+1:])[:mo1.start()]
+                            mo2 = re.search(r"</"+mo.group(1)+">",checkT)
+                            if mo2:
+                                if "<"+mo.group(1) not in checkT[:mo2.start()]:
+                                    continue
+                            # mo is confirmed as an opener, increase indent for lines down
+                            indentLevel += 1
+                            indentsL.append([i+1, indentLevel])
+                        # else: No change to indentsL, keep existing indent
+            else:
+                mo = re.match(r"</\w", tLine)
+                if mo:
+                    # mo is confirmed as a closer, decrease indent
+                    indentLevel -= 1
+                    indentsL.append([i, indentLevel])
+            # If neither opener nor closer found, it is content text that won't be indented
+        indentLevel = 0
+        for i, tLine in enumerate(tL[:]): # Copy
+            for x in indentsL:
+                if i == x[0]: # indent level change
+                    indentLevel = x[1]
+                    #break # Don't break, need to consider all
+            if tLine.startswith("<"): # Not content text
+                tL[i] = "  "*max(0,indentLevel) + tLine
+            # else: Content text, not indenting
+        text = "\n".join(tL)
+        return text
     
     def _convert_sources_to_html(sourcesDirs, htmlDirs, sLxNC, wdataT):
         """
@@ -1494,31 +1544,18 @@ function CreateNewsPrevNextLinks() {
                         return r'{} id="id{}"{}'.format(mo.group(1),idCount,mo.group(2))
                 hT = re.sub(r"(<(?:div|p|h\d|img|iframe|dl|dt|dd|ol|ul|li)(?:[ ][^>]*?)*?)(/?>)", 
                                                                     _id_generator, hT)
-            # Remove empty lines
-            hT = re.sub(r"\s+\n", r"\n", hT)
-            # Indent HTML tree structure (if from ".txt" source)
-            if fX == ".txt" and CD["INDENT_HTML_TREE"] == "YES":
-                ohT = hT[:] # If indenting fails, recover original
-                try:
-                    hT = re.sub(r">\s*\n\s*<","><",hT)
-                    hT = re.sub(r">\n+",">",hT)
-                    hT = re.sub(r"\n+<","<",hT)
-                    with xml.parseString(hT) as dom:
-                        hT = dom.documentElement.toprettyxml(indent="  ", newl="\n")
-                    # toprettyxml may have lost us the Doctype
-                    if re.match(r"\s*<html", hT) and docType:
-                        hT = docType + hT
-                    # Put back spaces at /> tag ends
-                    hT = re.sub(r"(?<![ ])(/>)", r" \1", hT)
-                    # Remove whitespace between closing tag and punctuation
-                    hT = re.sub(r"(</[^>]+>)\s+(?=[,.?!'\"\)])", r"\1", hT)
-                    # Remove line breaks before <span> tags
-                    hT = re.sub(r"\n+[ ]*(<span )", r"\1", hT)
-                    # Remove whitespace at start of <p> block 
-                    # for Chrome's handling of white-space CSS
-                    hT = re.sub(r"(<p [^>]+>)\s+", r"\1", hT)
-                except: # Fail silently
-                    hT = ohT[:]
+            
+            # Put back spaces at /> tag ends (id generating above)
+            hT = re.sub(r"(?<![ ])(/>)", r" \1", hT)
+            hT = re.sub(r" ( id=\")", r"\1", hT)
+            # Remove empty lines & whitespace between tags
+            hT = re.sub(r">\s*\n\s*<",">\n<",hT)
+            # Remove whitespace between closing tag and punctuation
+            hT = re.sub(r"(</[^>]+>)\s+(?=[,.?!'\"\)])", r"\1", hT)
+            # Remove whitespace at start of <p> block 
+            # for Chrome's handling of white-space CSS
+            hT = re.sub(r"(<p [^>]+>)\s+", r"\1", hT)
+            hT = _indent_html_tree(hT)
             # Bring in <pre> code text (protected earlier)
             if preContentL:
                 for x in preContentL:
