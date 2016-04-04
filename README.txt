@@ -27,6 +27,12 @@ Windows, Mac and Linux.
 
 CHANGELOG
 
+Version 1.5.0 - 4 April 2016
+
+Indenting of the HTML tree is now done natively by Quicknr, Python's
+    XML module is no longer used. The feature is now safe, the 
+    configuration option for turning it off has been removed.
+
 Version 1.4.0 - 3 April 2016
 
 * New Tools mode, accessed as a commandline '-t' toggle, with two
