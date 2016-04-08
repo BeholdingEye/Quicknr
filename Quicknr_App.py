@@ -10,7 +10,7 @@
 #                       from plain text sources                        #
 #                                                                      #
 #                                                                      #
-#                            Version 1.5.0                             #
+#                            Version 1.6.0                             #
 #                                                                      #
 #            Copyright 2016 Karl Dolenc, beholdingeye.com.             #
 #                         All rights reserved.                         #
@@ -93,7 +93,7 @@ def Quicknr():
     
     """
     
-    print("\n===================== QUICKNR 1.5.0 =====================\n")
+    print("\n===================== QUICKNR 1.6.0 =====================\n")
     
     # --------------------- App defaults
     
@@ -135,6 +135,7 @@ def Quicknr():
                     FTP_PASSWORD = "",
                     FTP_ACCT = "",
                     FTP_DEBUG = "0",
+                    ALWAYS_XHTML_TAGS = "NO",
                     FILE_SIZE_LIMIT = True,
                     siteDir = "", # Path
                     siteFolder = "", # Name
@@ -629,6 +630,7 @@ function CreateNewsPrevNextLinks() {
         if CD["DEBUG_ERRORS"] not in ["YES","NO"]: _ve("DEBUG_ERRORS")
         # Leave out server values
         if CD["FTP_DEBUG"] not in ["0","1","2"]: _ve("FTP_DEBUG")
+        if CD["ALWAYS_XHTML_TAGS"] not in ["YES","NO"]: _ve("ALWAYS_XHTML_TAGS")
         if CD["FILE_SIZE_LIMIT"] not in [True, False]: _ve("FILE_SIZE_LIMIT")
     
     def _get_site_config(CD):
@@ -712,6 +714,8 @@ function CreateNewsPrevNextLinks() {
             CD["FTP_ACCT"] = re.search(r"(?m)^FTP_ACCT:"+rP,cT).group(1)
         if re.search(r"(?m)^FTP_DEBUG:",cT):
             CD["FTP_DEBUG"] = re.search(r"(?m)^FTP_DEBUG:"+rP,cT).group(1)
+        if re.search(r"(?m)^ALWAYS_XHTML_TAGS:",cT):
+            CD["ALWAYS_XHTML_TAGS"] = re.search(r"(?m)^ALWAYS_XHTML_TAGS:"+rP,cT).group(1)
         os.chdir(prevCWD)
         _validate_CD(CD)
         return CD
@@ -1566,10 +1570,15 @@ function CreateNewsPrevNextLinks() {
                 for x in jsLinkContentL:
                     #x = html.escape(x, quote=False) # Done already
                     hT = hT.replace("(Quicknr?=jsLinkArgs=?Quicknr)", "(" + x + ")", 1)
-            # Last correction, for overzealous char entity conversion of &
+            # Correct overzealous char entity conversion of &
             hT = re.sub(r"&amp;([A-Za-z0-9#]{2,8};)", r"&\1", hT)
             # Remove whitespace around &nbsp;
             hT = re.sub(r"\s*(&nbsp;)\s*", r"\1", hT)
+            # HTML5 tags correction from Quicknr's internal XHTML
+            if CD["ALWAYS_XHTML_TAGS"] == "NO":
+                if re.match(r"(?i)\s*<\s*!\s*doctype\s+html\s*>", hT):
+                    hT = re.sub(r"\s*/>", ">", hT)
+            # Write HTML file
             with open(hF, mode="w") as f:
                 f.write(hT)
             relhF = os.path.relpath(hF, CD["siteDir"])
