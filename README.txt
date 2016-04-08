@@ -27,6 +27,13 @@ Windows, Mac and Linux.
 
 CHANGELOG
 
+Version 1.6.0 - 8 April 2016
+
+Whereas previously Quicknr used the XHTML style of HTML tags (with 
+    "empty" tags having " />" endings) regardless of the DOCTYPE, now
+    HTML style (with ">" endings) is used if <!DOCTYPE html> is found.
+    A new configuration setting allows old behaviour to be retained.  
+
 Version 1.5.0 - 4 April 2016
 
 Indenting of the HTML tree is now done natively by Quicknr, Python's
