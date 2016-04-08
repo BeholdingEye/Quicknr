@@ -353,6 +353,25 @@ DEBUG_ERRORS: NO
 
 ########################################################################
 #                                                                      #
+#                          ALWAYS XHTML TAGS                           #
+#                                                                      #
+#  Before writing a HTML file, Quicknr will check its DOCTYPE          #
+#  declaration, and adjust the format of HTML tags accordingly: HTML   #
+#  style for HTML 5, XHTML style for anything else. The only           #
+#  practical difference is that "empty" tags such as <img> will have   #
+#  the ending of " />" in XHTML 1.0, and ">" in HTML 5. In all other   #
+#  ways, the output is identical. It's a small difference, but it may  #
+#  be appreciated by those working with HTML 5.                        #
+#                                                                      #
+#  However, if the ALWAYS_XHTML_TAGS preference is set to YES, tag     #
+#  format will always be XHTML, regardless of the DOCTYPE. This was    #
+#  the behaviour in Quicknr prior to version 1.6. Default value is     #
+#  NO.                                                                 #
+#                                                                      #
+ALWAYS_XHTML_TAGS: NO
+
+########################################################################
+#                                                                      #
 #                            =============                             #
 #                            HTML SNIPPETS                             #
 #                            =============                             #
@@ -361,11 +380,6 @@ DEBUG_ERRORS: NO
 #  anywhere that is appropriate. Processed content of the text source  #
 #  document will be placed between these two snippets to create the    #
 #  HTML file.                                                          #
-#                                                                      #
-#  Quicknr creates tags in XHTML format, compatible with XHTML 1.0     #
-#  and HTML 5. The default snippets below are XHTML 1.0, but you can   #
-#  change that. Note that Quicknr is designed for publishing websites, #
-#  not web apps.                                                       #
 #                                                                      #
 #  When editing these snippets, be careful to not remove the  """      #
 #  quotes around the snippet.                                          #
