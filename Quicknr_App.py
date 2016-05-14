@@ -10,7 +10,7 @@
 #                       from plain text sources                        #
 #                                                                      #
 #                                                                      #
-#                            Version 1.6.0                             #
+#                            Version 1.7.0                             #
 #                                                                      #
 #            Copyright 2016 Karl Dolenc, beholdingeye.com.             #
 #                         All rights reserved.                         #
@@ -93,7 +93,7 @@ def Quicknr():
     
     """
     
-    print("\n===================== QUICKNR 1.6.0 =====================\n")
+    print("\n===================== QUICKNR 1.7.0 =====================\n")
     
     # --------------------- App defaults
     
@@ -1430,6 +1430,19 @@ function CreateNewsPrevNextLinks() {
         text = "\n".join(tL)
         return text
     
+    def _set_title_from_filename(filename):
+        """
+        Sets CD["HTML_PAGE_TITLE"] to the title derived from filename
+        
+        """
+        nonlocal CD
+        
+        if filename == "index":
+            title = "Home"
+        else:
+            title = filename.replace("-", " ").replace("_", " ").title()
+        CD["HTML_PAGE_TITLE"] = html.escape(title)
+    
     def _convert_sources_to_html(sourcesDirs, htmlDirs, sLxNC, wdataT):
         """
         Converts source ".txt"/".mdml" files that are either new or the user
@@ -1499,10 +1512,13 @@ function CreateNewsPrevNextLinks() {
                 hT = _plaintext_to_html(hT, fX, relfxNC)
                 if not hT: continue # Markdown processing attempt without module
                 # Update CD html head snippet with title
-                # File types other than ".txt"/".mdml" will need custom titling solutions
                 _enter_html_title()
                 # Change source ".txt"/".mdml" extension to HTML config preference
                 hF = os.path.splitext(hF)[0] + CD["PAGE_FILE_EXTENSION"]
+            else:
+                # File types other than ".txt"/".mdml" get title from filename
+                _set_title_from_filename(os.path.splitext(os.path.basename(fxNC))[0])
+                _enter_html_title()
             # Store doctype, we may need it later
             if re.match(r"\s*<!DOCTYPE[^>]+>", CD["HTML_HEAD"]):
                 docType = re.match(r"\s*<!DOCTYPE[^>]+>\n", CD["HTML_HEAD"]).group()
