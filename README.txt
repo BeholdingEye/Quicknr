@@ -27,6 +27,14 @@ Windows, Mac and Linux.
 
 CHANGELOG
 
+Version 1.7.0 - 14 May 2016
+
+* HTML <title> is now set not only for ".txt" source files, but also 
+    ".html". In the latter case, the title is obtained from the 
+    filename. If the file is "index.html", the title will be "Home".
+* Head and Tail snippets in the "config.txt" file are now in HTML 5 
+    format.
+
 Version 1.6.0 - 8 April 2016
 
 Whereas previously Quicknr used the XHTML style of HTML tags (with 
