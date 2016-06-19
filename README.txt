@@ -27,7 +27,7 @@ Windows, Mac and Linux.
 
 CHANGELOG
 
-Version 1.8.0 - 18 June 2016
+Version 1.8.0 - 19 June 2016
 
 * News listing page now features a "Load More" Javascript button for 
     displaying more news items than shown, if more are available.
