@@ -27,6 +27,25 @@ Windows, Mac and Linux.
 
 CHANGELOG
 
+Version 1.8.0 - 18 June 2016
+
+* News listing page now features a "Load More" Javascript button for 
+    displaying more news items than shown, if more are available.
+* A "javascript" folder now ships with Quicknr, containing "lib.js" with
+    routine functions and "news.js" for news listing functionality. The 
+    related configuration option for copying of Javascript files has 
+    been removed, being redundant.
+* News listing page title and its link text on news post pages have been
+    split into two configuration preferences, enabling "Blog" title, but
+    "Latest News" link.
+* News item thumbnails on the news listing page can now be generated 
+    rectangular or square, controlled by a new preference.
+* Open Graph and Twitter Card, as well as the canonical <link> tag and 
+    optionally <meta> description tag can now be edited by Quicknr from 
+    page content, filling out their title, description, image and URL. 
+    Of most use for news posts that may be shared on social media.
+* Numerous smaller fixes and improvements.
+
 Version 1.7.0 - 14 May 2016
 
 * HTML <title> is now set not only for ".txt" source files, but also 
