@@ -10,7 +10,7 @@
 #                       from plain text sources                        #
 #                                                                      #
 #                                                                      #
-#                            Version 1.7.0                             #
+#                            Version 1.8.0                             #
 #                                                                      #
 #            Copyright 2016 Karl Dolenc, beholdingeye.com.             #
 #                         All rights reserved.                         #
@@ -51,6 +51,8 @@ import os, re, hashlib, shutil, html, getpass, random, readline, argparse
 import xml.dom.minidom as xml
 import ftplib as ftp
 import datetime as dt
+from urllib.parse import urljoin
+from urllib.request import pathname2url
 from contextlib import suppress
 try: import markdown
 except ImportError: markdownModule = False
@@ -93,7 +95,7 @@ def Quicknr():
     
     """
     
-    print("\n===================== QUICKNR 1.7.0 =====================\n")
+    print("\n===================== QUICKNR 1.8.0 =====================\n")
     
     # --------------------- App defaults
     
@@ -116,6 +118,7 @@ def Quicknr():
                     NEWS_LIST_TITLE = "Latest News",
                     NEWS_BLURB_LENGTH = "300",
                     NEWS_MORE_PHRASE = "More...",
+                    NEWS_LIST_LINK = "Latest News",
                     NEWS_LIST_LINK_POSITION = "END",
                     NEWS_LIST_LINK_PREFIX = "",
                     NEWS_DATE_FORMAT = "%A, %d %B %Y",
@@ -124,10 +127,13 @@ def Quicknr():
                     NEWS_NEXT_LINK = "Newer &gt;",
                     NEWS_LIST_THUMBS = "YES",
                     NEWS_LIST_THUMB_SIZE = "100",
-                    COPY_JAVASCRIPT_FILES = "YES",
+                    NEWS_LIST_THUMB_SQUARE = "YES",
                     JAVASCRIPT_LINK_SPAN = "YES",
                     JAVASCRIPT_LINK_PRE = "",
                     JAVASCRIPT_LINK_POST = "",
+                    META_EDIT = "YES",
+                    META_DESCRIPTION = "YES",
+                    META_BASE_URL = "",
                     DEBUG_ERRORS = "NO",
                     FTP_SERVER = "",
                     FTP_PATH = "",
@@ -160,59 +166,39 @@ def Quicknr():
     preContentL = []
     
     # Prepare list for Javascript link function argument handling
-    jsLinkContentL = []
+    #jsLinkContentL = []
     
     # Boolean toggle for 'page_sources/news.txt' updating conversion
     updateNewsList = False
     
-    # Javascript that Quicknr will place in "public_html/res/js/news.js" file
-    newsLinksJavascript = """
-
-//==DO_NOT_EDIT_THIS_LINE
-// Quicknr requires the above line for placing of news files list
-
-// ======================= NEWS PREV NEXT LINKS =====================
-
-function CreateNewsPrevNextLinks() {
-    // Check if we're in news folder
-    var wHref = window.location.href;
-    var wDirPath = wHref.substr(0,wHref.lastIndexOf("/"));
-    var wDir = wDirPath.substr(wDirPath.lastIndexOf("/")+1);
-    if ((wDir == "news") && (news_files_list.length > 1)) {
-        var prevLink = "";
-        var nextLink = "";
-        for (var i = 0; i < news_files_list.length; i++) {
-            if (window.location.href.split("/").pop() == news_files_list[i]) {
-                // The newest file is first in the list, the oldest last
-                if (i == 0) {
-                    prevLink = news_files_list[i+1];
-                    nextLink = "";
-                }
-                else if (i == news_files_list.length - 1) {
-                    prevLink = "";
-                    nextLink = news_files_list[i-1];
-                }
-                else {
-                    prevLink = news_files_list[i+1];
-                    nextLink = news_files_list[i-1];
-                }
-                break;
-            }
-        }
-        var linksDiv = document.getElementsByClassName("news_links")[0];
-        var linksDivText = linksDiv.innerHTML;
-        if (prevLink != "") {
-            prevLink = '\\n<span class="prev_link"><a href="'+prevLink+'">'+news_prev_link_text+'</a></span>';
-            linksDivText = prevLink + linksDivText;
-        }
-        if (nextLink != "") {
-            nextLink = '<span class="next_link"><a href="'+nextLink+'">'+news_next_link_text+'</a></span>\\n';
-            linksDivText = linksDivText + nextLink;
-        }
-        linksDiv.innerHTML = linksDivText;
-    }
-}
-
+    # Boolean toggle for 'page_sources/news.txt' to be rebuilt
+    rebuildNewsList = False
+    
+    # News list item block to be filled with data and inserted into news posts
+    newsListItemBlock = """
+<!-- Quicknr-news-list-item-block
+<div class="headed_section">
+  <h2 class="heading"><span>DATE_TEXT</span> <a href="POST_URL">HEADING_TEXT</a></h2>
+  <div class="section">
+    <div class="imgfloat link_img">
+      <a href="POST_URL"><img src="THUMB_URL" alt=""></a>
+    </div>
+    <p class="p_1 img_p">BLURB_TEXT <a href="POST_URL">MORE_TEXT</a></p>
+  </div>
+</div>
+-->
+    """
+    
+    # News list item block, no thumbnail
+    newsListItemBlockNoThumb = """
+<!-- Quicknr-news-list-item-block
+<div class="headed_section">
+  <h2 class="heading"><span>DATE_TEXT</span> <a href="POST_URL">HEADING_TEXT</a></h2>
+  <div class="section">
+    <p class="p_1">BLURB_TEXT <a href="POST_URL">MORE_TEXT</a></p>
+  </div>
+</div>
+-->
     """
     
     # --------------------- INTERFACE/UTILITY FUNCTIONS ---------------------
@@ -296,6 +282,17 @@ function CreateNewsPrevNextLinks() {
         fH = hashlib.md5(fT.encode()).hexdigest()
         return (str(fS), fH)
 
+    def _html_escape_noamp(tT, quote=True):
+        """
+        Returns text with <>'" characters escaped, but not & to protect existing
+        character entities. Quotes conversion can be turned off
+        
+        """
+        tT = tT.replace(">", "&gt;").replace("<", "&lt;")
+        if quote:
+            tT = tT.replace("'", "&#27;").replace('"', "&quot;")
+        return tT
+
     def _ui_list_menu(inputList, inputTitle, userPrompt, customOption="", customKey=""):
         """
         Presents a list of up to 99 numbered options to choose from, returns chosen
@@ -372,6 +369,7 @@ function CreateNewsPrevNextLinks() {
             """
             prompt = "\nEnter the FULL NAME of the website (or Q to quit): "
             r = _ui_get_full_website_name(prompt) # User may quit
+            r = html.escape(r)
             while True:
                 r1 = input( "\nEnter the website FOLDER name, using alphanumerical characters and\n"
                             "  the underscore (A-Za-z0-9_) only and no spaces (or Q to quit).\n"
@@ -399,21 +397,15 @@ function CreateNewsPrevNextLinks() {
             # --------------------- Copy Quicknr config folder to website
             cPath = os.path.join(qnrDir, "websites/" + r1 + "/config")
             shutil.copytree(os.path.join(qnrDir, "config"), cPath)
-            # --------------------- Copy any user javascript files to website
-            if CD["COPY_JAVASCRIPT_FILES"] == "YES":
-                for x in ["javascript", "Javascript"]:
-                    if os.path.exists(os.path.join(qnrDir, x)):
-                        jsPath = os.path.join(qnrDir, 
-                                    "websites/" + r1 + "/public_html/res/js")
-                        # Copying function requires that dir not exist yet
-                        os.rmdir(jsPath) # Expects empty dir, good
-                        shutil.copytree(os.path.join(qnrDir, x), jsPath)
-                        break
-            # --------------------- Create news.js file
-            with open(os.path.join(qnrDir, 
-                                    "websites/" + r1 + "/public_html/res/js/news.js"), 
-                                    mode="w") as f:
-                f.write(newsLinksJavascript)
+            # --------------------- Copy Quicknr Javascript files to website
+            for x in ["javascript", "Javascript"]:
+                if os.path.exists(os.path.join(qnrDir, x)):
+                    jsPath = os.path.join(qnrDir, 
+                                "websites/" + r1 + "/public_html/res/js")
+                    # Copying function requires that dir not exist yet
+                    os.rmdir(jsPath) # Expects empty dir, good
+                    shutil.copytree(os.path.join(qnrDir, x), jsPath)
+                    break
             # --------------------- Record website folder name in data file
             with open(os.path.join(qnrDir, 
                                     "websites/" + r1 + "/quicknr_private/quicknr_data.txt"), 
@@ -476,11 +468,13 @@ function CreateNewsPrevNextLinks() {
               /public-html/res/css - CSS stylesheet files
               /public-html/res/font - Custom fonts
               /public-html/res/img - Website interface images and icons
-              /public_html/res/js  - Javascript files, including news.js
-                                     continually updated by Quicknr for 
-                                     dynamic Prev/Next news links
+              /public_html/res/js  - Javascript files, including lib.js
+                                     containing routine functions, and 
+                                     news.js, continually updated by 
+                                     Quicknr for dynamic Prev/Next news
+                                     links
               
-              /quicknr_private/       - Location of the 'quicknr_data.txt'
+              /quicknr_private/    - Location of the 'quicknr_data.txt'
                                      file, used by Quicknr to perform its
                                      work. Must not be edited by user
             """
@@ -584,16 +578,17 @@ function CreateNewsPrevNextLinks() {
             pT = pT[:mo.start()]+fT+pT[mo.end():] # Insert, dropping directive
         return pT
     
-    def _validate_CD(CD):
+    def _validate_correct_CD():
         """
-        Validates CD values
+        Validates CD values, and corrects some
         
         """
+        nonlocal CD
+        
         def _ve(s):
             """ Error call on the error """
             _say_error("Error: Invalid value in config: %s\n       Quit." % s)
-            
-            return 0
+
         if CD["HTML_TITLE"] not in ["WEBSITE-PAGE", "WEBSITE", "PAGE"]:
             _ve("HTML_TITLE")
         if len(CD["HTML_TITLE_SEPARATOR"].strip()) > 3: _ve("HTML_TITLE_SEPARATOR")
@@ -614,19 +609,25 @@ function CreateNewsPrevNextLinks() {
         except:
             _ve("NEWS_BLURB_LENGTH")
         if not CD["NEWS_MORE_PHRASE"].strip(): _ve("NEWS_MORE_PHRASE")
+        # Escape <> in NEWS_MORE_PHRASE
+        CD["NEWS_MORE_PHRASE"] = _html_escape_noamp(CD["NEWS_MORE_PHRASE"], quote=False)
+        if not CD["NEWS_LIST_LINK"].strip(): _ve("NEWS_LIST_LINK") # Will be html.escaped
         if CD["NEWS_LIST_LINK_POSITION"].strip() not in ["START", "END"]:
             _ve("NEWS_LIST_LINK_POSITION")
-        # News list link prefix can be empty, no validation
+        # News list link prefix can be empty, no validation, will be html.escaped
         if not CD["NEWS_DATE_FORMAT"].strip(): _ve("NEWS_DATE_FORMAT")
         if CD["NEWS_DATE_FROM_FILENAME"] not in ["YES","NO"]: _ve("NEWS_DATE_FROM_FILENAME")
         if not CD["NEWS_PREV_LINK"].strip(): _ve("NEWS_PREV_LINK")
         if not CD["NEWS_NEXT_LINK"].strip(): _ve("NEWS_NEXT_LINK")
         if CD["NEWS_LIST_THUMBS"] not in ["YES","NO"]: _ve("NEWS_LIST_THUMBS")
         if not re.match(r"\d+\Z", CD["NEWS_LIST_THUMB_SIZE"]): _ve("NEWS_LIST_THUMB_SIZE")
-        if CD["COPY_JAVASCRIPT_FILES"] not in ["YES","NO"]: _ve("COPY_JAVASCRIPT_FILES")
+        if CD["NEWS_LIST_THUMB_SQUARE"] not in ["YES","NO"]: _ve("NEWS_LIST_THUMB_SQUARE")
         if CD["JAVASCRIPT_LINK_SPAN"] not in ["YES","NO"]: _ve("JAVASCRIPT_LINK_SPAN")
-        if "\\" in CD["JAVASCRIPT_LINK_PRE"]: ve("JAVASCRIPT_LINK_PRE")
-        if "\\" in CD["JAVASCRIPT_LINK_POST"]: ve("JAVASCRIPT_LINK_POST")
+        if re.search(r"[^ A-Za-z0-9_\-'\.;:()]", CD["JAVASCRIPT_LINK_PRE"]): _ve("JAVASCRIPT_LINK_PRE")
+        if re.search(r"[^ A-Za-z0-9_\-'\.;:()]", CD["JAVASCRIPT_LINK_POST"]): _ve("JAVASCRIPT_LINK_POST")
+        if re.search(r'[ "<>]', CD["META_BASE_URL"]): _ve("META_BASE_URL")
+        if CD["META_EDIT"] not in ["YES","NO"]: _ve("META_EDIT")
+        if CD["META_DESCRIPTION"] not in ["YES","NO"]: _ve("META_DESCRIPTION")
         if CD["DEBUG_ERRORS"] not in ["YES","NO"]: _ve("DEBUG_ERRORS")
         # Leave out server values
         if CD["FTP_DEBUG"] not in ["0","1","2"]: _ve("FTP_DEBUG")
@@ -653,13 +654,12 @@ function CreateNewsPrevNextLinks() {
             CD["HTML_TITLE"] = re.search(r"(?m)^HTML_TITLE:"+rP,cT).group(1)
         if re.search(r"(?m)^HTML_TITLE_SEPARATOR:",cT):
             CD["HTML_TITLE_SEPARATOR"] = re.search(r"(?m)^HTML_TITLE_SEPARATOR:"+rP,cT).group(1)
-            CD["HTML_TITLE_SEPARATOR"] = html.escape(CD["HTML_TITLE_SEPARATOR"])
+            CD["HTML_TITLE_SEPARATOR"] = _html_escape_noamp(CD["HTML_TITLE_SEPARATOR"])
         if re.search(r"(?m)^HTML_WEBSITE_NAME:",cT):
             CD["HTML_WEBSITE_NAME"] = re.search(r"(?m)^HTML_WEBSITE_NAME:"+rP,cT).group(1)
-            CD["HTML_WEBSITE_NAME"] = html.escape(CD["HTML_WEBSITE_NAME"])
-        if re.search(r"(?m)^HTML_PAGE_TITLE:",cT):
+            CD["HTML_WEBSITE_NAME"] = _html_escape_noamp(CD["HTML_WEBSITE_NAME"], quote=False)
+        if re.search(r"(?m)^HTML_PAGE_TITLE:",cT): # Will be escaped
             CD["HTML_PAGE_TITLE"] = re.search(r"(?m)^HTML_PAGE_TITLE:"+rP,cT).group(1)
-            CD["HTML_PAGE_TITLE"] = html.escape(CD["HTML_PAGE_TITLE"])
         if re.search(r"(?m)^PAGE_FILE_EXTENSION:",cT):
             CD["PAGE_FILE_EXTENSION"] = re.search(r"(?m)^PAGE_FILE_EXTENSION:"+rP,cT).group(1)
         if re.search(r"(?m)^QLM_OR_MARKDOWN:",cT):
@@ -676,6 +676,8 @@ function CreateNewsPrevNextLinks() {
             CD["NEWS_BLURB_LENGTH"] = re.search(r"(?m)^NEWS_BLURB_LENGTH:"+rP,cT).group(1)
         if re.search(r"(?m)^NEWS_MORE_PHRASE:",cT):
             CD["NEWS_MORE_PHRASE"] = re.search(r"(?m)^NEWS_MORE_PHRASE:"+rP,cT).group(1)
+        if re.search(r"(?m)^NEWS_LIST_LINK:",cT):
+            CD["NEWS_LIST_LINK"] = re.search(r"(?m)^NEWS_LIST_LINK:"+rP,cT).group(1)
         if re.search(r"(?m)^NEWS_LIST_LINK_POSITION:",cT):
             CD["NEWS_LIST_LINK_POSITION"] = re.search(r"(?m)^NEWS_LIST_LINK_POSITION:"+rP,cT).group(1)
         if re.search(r"(?m)^NEWS_LIST_LINK_PREFIX:",cT):
@@ -692,14 +694,20 @@ function CreateNewsPrevNextLinks() {
             CD["NEWS_LIST_THUMBS"] = re.search(r"(?m)^NEWS_LIST_THUMBS:"+rP,cT).group(1)
         if re.search(r"(?m)^NEWS_LIST_THUMB_SIZE:",cT):
             CD["NEWS_LIST_THUMB_SIZE"] = re.search(r"(?m)^NEWS_LIST_THUMB_SIZE:"+rP,cT).group(1)
-        if re.search(r"(?m)^COPY_JAVASCRIPT_FILES:",cT):
-            CD["COPY_JAVASCRIPT_FILES"] = re.search(r"(?m)^COPY_JAVASCRIPT_FILES:"+rP,cT).group(1)
+        if re.search(r"(?m)^NEWS_LIST_THUMB_SQUARE:",cT):
+            CD["NEWS_LIST_THUMB_SQUARE"] = re.search(r"(?m)^NEWS_LIST_THUMB_SQUARE:"+rP,cT).group(1)
         if re.search(r"(?m)^JAVASCRIPT_LINK_SPAN:",cT):
             CD["JAVASCRIPT_LINK_SPAN"] = re.search(r"(?m)^JAVASCRIPT_LINK_SPAN:"+rP,cT).group(1)
         if re.search(r"(?m)^JAVASCRIPT_LINK_PRE:",cT):
             CD["JAVASCRIPT_LINK_PRE"] = re.search(r"(?m)^JAVASCRIPT_LINK_PRE:"+rP,cT).group(1)
         if re.search(r"(?m)^JAVASCRIPT_LINK_POST:",cT):
             CD["JAVASCRIPT_LINK_POST"] = re.search(r"(?m)^JAVASCRIPT_LINK_POST:"+rP,cT).group(1)
+        if re.search(r"(?m)^META_EDIT:",cT):
+            CD["META_EDIT"] = re.search(r"(?m)^META_EDIT:"+rP,cT).group(1)
+        if re.search(r"(?m)^META_DESCRIPTION:",cT):
+            CD["META_DESCRIPTION"] = re.search(r"(?m)^META_DESCRIPTION:"+rP,cT).group(1)
+        if re.search(r"(?m)^META_BASE_URL:",cT):
+            CD["META_BASE_URL"] = re.search(r"(?m)^META_BASE_URL:"+rP,cT).group(1)
         if re.search(r"(?m)^DEBUG_ERRORS:",cT):
             CD["DEBUG_ERRORS"] = re.search(r"(?m)^DEBUG_ERRORS:"+rP,cT).group(1)
         if re.search(r"(?m)^FTP_SERVER:",cT):
@@ -717,7 +725,7 @@ function CreateNewsPrevNextLinks() {
         if re.search(r"(?m)^ALWAYS_XHTML_TAGS:",cT):
             CD["ALWAYS_XHTML_TAGS"] = re.search(r"(?m)^ALWAYS_XHTML_TAGS:"+rP,cT).group(1)
         os.chdir(prevCWD)
-        _validate_CD(CD)
+        _validate_correct_CD()
         return CD
     
     def _get_pages_folders(siteDir):
@@ -819,9 +827,14 @@ function CreateNewsPrevNextLinks() {
                         "       Thumbnail could not be created. Check your image links.\n"
                         "       Quit.".format(filePath))
         im = img.open(filePath)
-        im = ImageOps.fit(im, size, img.ANTIALIAS, 0, (0.5,0.5))
-        im.save(os.path.splitext(filePath)[0]+"-thumb.jpg","JPEG",optimize=True,quality=45)
-        return os.path.splitext(filePath)[0] + "-thumb.jpg"
+        if CD["NEWS_LIST_THUMB_SQUARE"] == "YES":
+            im = ImageOps.fit(im, size, img.ANTIALIAS, 0, (0.5,0.5))
+        else:
+            im.thumbnail(size, img.ANTIALIAS) # Size will control longest side
+        fpThumb = os.path.splitext(filePath)[0] + "-thumb.jpg"
+        im.save(fpThumb, "JPEG", optimize=True, quality=45)
+        print("\n  Thumbnail generated for '%s'" % os.path.basename(filePath))
+        return fpThumb
 
 
     # --------------------- HTML FILE BUILDING FUNCTIONS ---------------------
@@ -833,19 +846,52 @@ function CreateNewsPrevNextLinks() {
         
         """
         nonlocal CD
+        
         if "<title>" in CD["HTML_HEAD"]:
             # Clear any pre-existing title
-            CD["HTML_HEAD"] = re.sub(r"(<title>).+?(</title>)", r"\1\2", CD["HTML_HEAD"])
+            CD["HTML_HEAD"] = re.sub(r"(<title>)[^<]+(</title>)", r"\1\2", CD["HTML_HEAD"])
+            # Process title to be acceptable for the <title> tag
+            cleanTitle = _html_escape_noamp(_delete_inline_styling(CD["HTML_PAGE_TITLE"]), quote=False)
             if CD["HTML_TITLE"] == "WEBSITE-PAGE":
                 if CD["HTML_PAGE_TITLE"]:
                     htmlTitle = CD["HTML_WEBSITE_NAME"] + CD["HTML_TITLE_SEPARATOR"] + \
-                                CD["HTML_PAGE_TITLE"]
+                                                                cleanTitle
                 else: htmlTitle = CD["HTML_WEBSITE_NAME"]
             elif CD["HTML_TITLE"] == "WEBSITE": htmlTitle = CD["HTML_WEBSITE_NAME"]
-            elif CD["HTML_TITLE"] == "PAGE": htmlTitle = CD["HTML_PAGE_TITLE"]
+            elif CD["HTML_TITLE"] == "PAGE": htmlTitle = cleanTitle
             CD["HTML_HEAD"] = CD["HTML_HEAD"].replace( "<title></title>", 
                                                 "<title>{}</title>".format(htmlTitle))
 
+    def _bold_italic_mono(tT):
+        """
+        Converts inline text styling, bold, italic, monospaced (<code>)
+        
+        We use <span> for a sense of CSS 'neutrality', and easier 
+        processing with regex
+        
+        """
+        tT = re.sub(r"(?<!\w)[*_`]{3}([^ ].*?)[*_`]{3}(?!\w)", 
+            r'<span style="font-weight:bold;font-style:italic"><code>\1</code></span>', tT)
+        # Order matters here, catch double ** and __ as bold & italic, `` as italic
+        tT = re.sub(r"(?<!\w)[*_]{2}([^ ].*?)[*_]{2}(?!\w)", 
+            r'<span style="font-weight:bold;font-style:italic">\1</span>', tT)
+        tT = re.sub(r"(?<!\w)[_`]{2}([^ ].*?)[_`]{2}(?!\w)", 
+            r'<span style="font-style:italic"><code>\1</code></span>', tT)
+        tT = re.sub(r"(?<!\w)[*`]{2}([^ ].*?)[*`]{2}(?!\w)", 
+            r'<span style="font-weight:bold"><code>\1</code></span>', tT)
+        tT = re.sub(r"(?<!\w)\*([^ ].*?)\*(?!\w)", r'<span style="font-weight:bold">\1</span>', tT)
+        tT = re.sub(r"(?<!\w)_([^ ].*?)_(?!\w)", r'<span style="font-style:italic">\1</span>', tT)
+        tT = re.sub(r"(?<!\w)`([^ ].*?)`(?!\w)", r"<code>\1</code>", tT)
+        return tT
+        
+    def _delete_inline_styling(tT):
+        """
+        Deletes styling markup from text
+        
+        """
+        tT = re.sub(r"(?<!\w)[*_`]+([^ ].*?)[*_`]+(?!\w)", r"\1", tT)
+        return tT
+    
     def _process_inline_markup(rT):
         """
         Converts inline markup to HTML and returns the text
@@ -858,55 +904,34 @@ function CreateNewsPrevNextLinks() {
             if CD["JAVASCRIPT_LINK_SPAN"] == "YES":                
                 x = '<span class="js_call" onclick="'+CD["JAVASCRIPT_LINK_PRE"]
                 x += '\\2'+CD["JAVASCRIPT_LINK_POST"]+'">\\1</span>'
-                rT = re.sub(r"\[(.+?)[ ]+([^ \(\):]+\([^ \(\)]*\))\]", x, rT)
+                rT = re.sub(r"\[(.+?)[ ]+([A-Za-z0-9_\-'\.;]+\([A-Za-z0-9_\-'\.;]*\))\]", x, rT)
                 
                 x = '<span class="js_call" onclick="'+CD["JAVASCRIPT_LINK_PRE"]
-                x += '\\1'+CD["JAVASCRIPT_LINK_POST"]+'"> </span>'
-                rT = re.sub(r"\[([^ \(\):]+\([^ \(\)]*\))\]", x, rT)
+                x += '\\1'+CD["JAVASCRIPT_LINK_POST"]+'"></span>'
+                rT = re.sub(r"\[([A-Za-z0-9_\-'\.;]+\([A-Za-z0-9_\-'\.;]*\))\]", x, rT)
                 
             # Regular links as <a>
             rT = re.sub(r"\[(.+?)[ ]+(\S+?)\]", r'<a href="\2">\1</a>', rT)
             rT = re.sub(r"\[(\S+?)\]", r'<a href="\1">\1</a>', rT)
-            
+        
         # --------------------- Bold, italic and monospace in linked text
-        # We use <span> for a sense of CSS 'neutrality', and easier processing with regex
-        rT = re.sub(r"(>)(?:\*|_|`){3}([^<]+?)(?:\*|_|`){3}(</a>)", 
-            r'\1<span style="font-weight:bold;font-style:italic"><code>\2</code></span>\3', rT)
-        # Order matters here, catch double ** and __ as bold & italic, `` as italic
-        rT = re.sub(r"(>)(?:\*|_){2}([^<]+?)(?:\*|_){2}(</a>)", 
-            r'\1<span style="font-weight:bold;font-style:italic">\2</span>\3', rT)
-        rT = re.sub(r"(>)(?:_|`){2}([^<]+?)(?:_|`){2}(</a>)", 
-            r'\1<span style="font-style:italic"><code>\2</code></span>\3', rT)
-        rT = re.sub(r"(>)(?:\*|`){2}([^<]+?)(?:\*|`){2}(</a>)", 
-            r'\1<span style="font-weight:bold"><code>\2</code></span>\3', rT)
-        rT = re.sub(r"(>)\*([^<]+?)\*(</a>)", r'\1<span style="font-weight:bold">\2</span>\3', rT)
-        rT = re.sub(r"(>)_([^<]+?)_(</a>)", r'\1<span style="font-style:italic">\2</span>\3', rT)
-        rT = re.sub(r"(>)`([^<]+?)`(</a>)", r"\1<code>\2</code>\3", rT)
-        # Correct for styling - href/src/alt, styling not valid here
-        # Three times, to catch all
-        rT = re.sub(r"((?:href|src)=\")(\*|_|`)([^\"]+)\2(\")", r"\1\3\4", rT)
-        rT = re.sub(r"((?:href|src)=\")(\*|_|`)([^\"]+)\2(\")", r"\1\3\4", rT)
-        rT = re.sub(r"((?:href|src)=\")(\*|_|`)([^\"]+)\2(\")", r"\1\3\4", rT)
-        rT = re.sub(r"((?:alt)=\")(\*|_|`)([^\"]+)\2", r"\1\3", rT)
-        rT = re.sub(r"((?:alt)=\")(\*|_|`)([^\"]+)\2", r"\1\3", rT)
-        rT = re.sub(r"((?:alt)=\")(\*|_|`)([^\"]+)\2", r"\1\3", rT)
+        def _inline_style_links(mo):
+            """ Returns inline styled matches """
+            return mo.group(1) + _bold_italic_mono(mo.group(2)) + mo.group(3)
+        rT = re.sub(r"(>)([^<]+?)(</a>)", _inline_style_links, rT)
+
+        # Delete styling in alt attributes, styling not valid here
+        def _delete_inline_styling_call(mo):
+            """ Deletes styling markup from matches """
+            tT = _delete_inline_styling(mo.group(2))
+            return mo.group(1) + tT + mo.group(3)
+        rT = re.sub(r"( alt=\")([^\"]+)(\")", _delete_inline_styling_call, rT)
         
         # Correct http/www.
         rT = re.sub(r"(href|src)=\"www\.", r'\1="http://www.', rT)
         
         # --------------------- Styling outside links
-        rT = re.sub(r"(?<=\s)(?:\*|_|`){3}([^ ][^*`]*?)(?:\*|_|`){3}(?!\w)", 
-            r'<span style="font-weight:bold;font-style:italic"><code>\1</code></span>', rT)
-        # Order matters again
-        rT = re.sub(r"(?<=\s)(?:_|\*){2}([^ ][^*]*?)(?:_|\*){2}(?!\w)", 
-            r'<span style="font-weight:bold;font-style:italic">\1</span>', rT)
-        rT = re.sub(r"(?<=\s)(?:_|`){2}([^ ][^`]*?)(?:_|`){2}(?!\w)", 
-            r'<span style="font-style:italic"><code>\1</code></span>', rT)
-        rT = re.sub(r"(?<=\s)(?:\*|`){2}([^ ][^*`]*?)(?:\*|`){2}(?!\w)", 
-            r'<span style="font-weight:bold"><code>\1</code></span>', rT)
-        rT = re.sub(r"(?<=\W)\*([^ ][^*]*)\*(?!\w)", r'<span style="font-weight:bold">\1</span>', rT)
-        rT = re.sub(r"(?<=\W)_([^ ].*?)_(?!\w)", r'<span style="font-style:italic">\1</span>', rT)
-        rT = re.sub(r"(?<=\W)`([^ ][^`]*)`(?!\w)", r"<code>\1</code>", rT)
+        rT = _bold_italic_mono(rT)
         return rT
         
 
@@ -917,13 +942,13 @@ function CreateNewsPrevNextLinks() {
         """
         nonlocal CD
         nonlocal preContentL
-        nonlocal jsLinkContentL
+        #nonlocal jsLinkContentL
         
         if markdownModule and (fX == ".mdml" or CD["QLM_OR_MARKDOWN"] == "MARKDOWN"):
             # A compromise attempt at titling a Markdown page: first para up to 80 chars
             if CD["MARKDOWN_TITLING"] == "YES":
                 mo = re.match(r"\S[^\n]{0,80}", text) # !No starting whitespace
-                if mo: CD["HTML_PAGE_TITLE"] = html.escape(mo.group().strip())
+                if mo: CD["HTML_PAGE_TITLE"] = mo.group().strip()
             return markdown_to_html(text)
         elif not markdownModule and fX == ".mdml":
             print("     File '%s' not converted, Markdown module not available." % relfPath)
@@ -956,12 +981,19 @@ function CreateNewsPrevNextLinks() {
         # --------------------- Text cleaning
         # Convert tabs to 4 spaces
         nT = text.replace("\t", "    ")
+        # Quit if double quotes in URLs
+        if re.search(r'\[(?:[^\[\]\n]+[ ])?[^ "\[\]\n]*?"[^ \[\]\n]*?\]', nT):
+            _say_error( "Error: File '"+relfPath+"' contains\n"
+                        "       an invalid URL. Correct and try again.\n"
+                        "       Quit.")
         # Add line breaks at start/end (for sections)
         nT = "\n\n"+nT+"\n\n"
         # Convert any <> around URLs to [] ??
         #nT = re.sub(r"<[ ]*((?:\S+?\.)+\S+?)[ ]*>", r"[\1]", nT)
         # Escape HTML characters
-        nT = html.escape(nT, quote=False)
+        nT = _html_escape_noamp(nT, quote=False)
+        # Revert &amp; back to & in links
+        #nT = re.sub(r"(\[[^\]\n]*?[^ \]\n]+?)&amp;([^ \]\n]+\])", r"\1&\2", nT)
         # Protect code blocks, into their list
         for x in nT.strip().split("\n\n"):
             if re.match(r"(?i)code(?:-\w+)?:\s[ ]*\S",x):
@@ -970,11 +1002,11 @@ function CreateNewsPrevNextLinks() {
         if preContentL:
             nT = re.sub(r"(?mi)(^code(?:-\w+)?:\s)(.+\n)+(?=\n)", r"\1Quicknr?=preText=?Quicknr\n", nT)
         # Protect Javascript link function arguments, into their list
-        for x in nT.strip().split("\n\n"):
-            for y in re.finditer(r"\[[^\[\]\n]+\(([^\n]*?)\);?\]",x):
-                jsLinkContentL.append(y.group(1))
-        if jsLinkContentL:
-            nT = re.sub(r"(?m)(\[[^\[\]\n]+\()[^\n]*?(\);?\])", r"\1Quicknr?=jsLinkArgs=?Quicknr\2", nT)
+        #for x in nT.strip().split("\n\n"):
+            #for y in re.finditer(r"\[[^\[\]\n]+\(([^\n]*?)\);?\]",x):
+                #jsLinkContentL.append(y.group(1))
+        #if jsLinkContentL:
+            #nT = re.sub(r"(?m)(\[[^\[\]\n]+\()[^\n]*?(\);?\])", r"\1Quicknr?=jsLinkArgs=?Quicknr\2", nT)
         # Delete trailing spaces (not line breaks)
         nT = re.sub(r"(?m)[ ]+$", "", nT)
         # Delete spaces within [] boundaries
@@ -1012,7 +1044,7 @@ function CreateNewsPrevNextLinks() {
         if title:
             if titleAppear: blocks.append([title, "title"])
             # Update config
-            CD["HTML_PAGE_TITLE"] = html.escape(title)
+            CD["HTML_PAGE_TITLE"] = title # Already escaped, and will be again
             nT = re.sub(r"\A\s*\S.*", "", nT)
         
         # --------------------- Headings sections
@@ -1064,11 +1096,22 @@ function CreateNewsPrevNextLinks() {
                             else:
                                 linkText = ""
                             linkURL = pT[1:-1] # May not equal linkText later
+                        if re.search(r'["]', linkURL):
+                            _say_error( "Error: File '"+relfPath+"' contains\n"
+                                        "       an invalid URL. Correct and try again.\n"
+                                        "       Quit.")
+                        # Escape quotes, not done earlier
+                        origLinkText = linkText[:] # Copy to preserve original for comparing
+                        linkText = linkText.replace("'", "&#x27;").replace('"', "&quot;")
                         # Handle different link block types
                         if linkType == "link":
                             pCount += 1
                             if CD["JAVASCRIPT_LINK_SPAN"] == "YES" and re.match(r"[^():]+\([^()]*\)",linkURL):
-                                if linkText == linkURL: linkText = " " # Prevent empty tag
+                                if origLinkText == linkURL: linkText = " " # Prevent empty tag
+                                if re.search(r"[^A-Za-z0-9_\-'\.;()]", linkURL):
+                                    _say_error( "Error: File '"+relfPath+"' contains an invalid\n"
+                                                "       Javascript function call. Correct and try again.\n"
+                                                "       Quit.")
                                 linkURL = CD["JAVASCRIPT_LINK_PRE"] + linkURL + CD["JAVASCRIPT_LINK_POST"]
                                 pT = '<p class="p_{} link_p {} section_{}"><span class="js_call" onclick="{}">{}</span></p>'
                                 pT = pT.format(pCount,pCount%2 and "odd" or "even",sCount,linkURL,linkText)
@@ -1088,6 +1131,10 @@ function CreateNewsPrevNextLinks() {
                             pT = '<div class="imgblock imgblock_{} {} section_{}">\n'
                             if clickLinkURL:
                                 if CD["JAVASCRIPT_LINK_SPAN"] == "YES" and re.match(r"[^():]+\([^()]*\)",clickLinkURL):
+                                    if re.search(r"[^A-Za-z0-9_\-'\.;()]", clickLinkURL):
+                                        _say_error( "Error: File '"+relfPath+"' contains an invalid\n"
+                                                    "       Javascript function call. Correct and try again.\n"
+                                                    "       Quit.")
                                     clickLinkURL = CD["JAVASCRIPT_LINK_PRE"] + clickLinkURL + CD["JAVASCRIPT_LINK_POST"]
                                     pT = '<div class="imgblock link_img imgblock_{} {} section_{}">\n<span class="js_call"'
                                     pT += ' onclick="{}">\n'
@@ -1168,8 +1215,13 @@ function CreateNewsPrevNextLinks() {
                         # Image part of paragraph
                         if " " in linkURL:
                             linkText, linkURL = linkURL.rsplit(maxsplit=1)
+                            linkText = linkText.replace("'", "&#x27;").replace('"', "&quot;")
                         else:
                             linkText = ""
+                        if re.search(r'["]', linkURL):
+                            _say_error( "Error: File '"+relfPath+"' contains\n"
+                                        "       an invalid URL. Correct and try again.\n"
+                                        "       Quit.")
                         clickLinkURL = "" # Handle images as links
                         if "Quicknr?=IL=?Quicknr" in linkURL:
                             linkURL, clickLinkURL = linkURL.split("Quicknr?=IL=?Quicknr", maxsplit=1)
@@ -1182,6 +1234,10 @@ function CreateNewsPrevNextLinks() {
                         ipT = '<div class="imgfloat imgfloat_{} {} section_{}">\n'
                         if clickLinkURL:
                             if CD["JAVASCRIPT_LINK_SPAN"] == "YES" and re.match(r"[^():]+\([^()]*\)",clickLinkURL):
+                                if re.search(r"[^A-Za-z0-9_\-'\.;()]", clickLinkURL):
+                                    _say_error( "Error: File '"+relfPath+"' contains an invalid\n"
+                                                "       Javascript function call. Correct and try again.\n"
+                                                "       Quit.")
                                 clickLinkURL = CD["JAVASCRIPT_LINK_PRE"] + clickLinkURL + CD["JAVASCRIPT_LINK_POST"]
                                 ipT = '<div class="imgfloat link_img imgfloat_{} {} section_{}">\n<span class="js_call"'
                                 ipT += ' onclick="{}">\n'
@@ -1236,16 +1292,18 @@ function CreateNewsPrevNextLinks() {
         rT = _process_inline_markup(rT)
         
         # Final wrap (penultimate actually; by default, head snippet adds <div class="page">)
-        # Place file name in class for main div
-        docN = os.path.splitext(os.path.basename(CD["sourceFilePath"]))[0]
+        # Place file name in class for main div (if it is "html clean")
+        docN = ""
+        if not re.search(r"[<>\"'&]", os.path.splitext(os.path.basename(CD["sourceFilePath"]))[0]):
+            docN = os.path.splitext(os.path.basename(CD["sourceFilePath"]))[0]
         # If news post, insert link to news listing, named per pref
         hCode = ""
         if os.path.split(os.path.dirname(CD["sourceFilePath"]))[1] == "news":
             hCode = '<div class="news_links">\n<span class="listing_link">'
             hCode += '<a href="../news{}">{}{}</a></span>\n</div>\n'
             hCode = hCode.format(   CD["PAGE_FILE_EXTENSION"],
-                                    html.escape(CD["NEWS_LIST_LINK_PREFIX"],quote=False),
-                                    CD["NEWS_LIST_TITLE"])
+                                    _html_escape_noamp(CD["NEWS_LIST_LINK_PREFIX"]),
+                                    _html_escape_noamp(CD["NEWS_LIST_LINK"]))
         if CD["NEWS_LIST_LINK_POSITION"] == "START":
             rT = "<div class=\"user_content "+docN+"\">\n"+hCode+rT+"</div>\n"
         else:
@@ -1341,10 +1399,36 @@ function CreateNewsPrevNextLinks() {
             return rT
         else: return text
     
+    def _get_news_post_img_url(newsT):
+        """
+        Returns the first image url in news post or empty. URL is relative
+        to "public_html", containing "news.html" listing file
+        
+        """
+        mo = re.search(r"(?m)^\[([^\]]+?(?:\.jpg|\.png|\.gif))\]", newsT)
+        if mo:
+            imgURL = mo.group(1)
+            if len(imgURL.split()) > 1: # Drop non-URL part if any
+                imgURL = imgURL.rsplit(maxsplit=1)[1]
+            # Return if it's an external link
+            if re.match(r"http|www\.", imgURL): return imgURL
+            # Resolve relative URL
+            if imgURL.startswith("../"):
+                imgURL = imgURL[3:]
+                # Return empty if illegal URL out of "public_html"
+                if imgURL.startswith("../"): return ""
+                return imgURL
+            else:
+                imgURL = "news/" + imgURL
+                return imgURL
+        return ""
+    
     def _get_news_post_thumb_url(newsT):
         """
         Returns either the thumb or full-size image URL for first image in news post,
         depending on whether a thumb is available, or PIL can be used to create it
+        
+        Returns empty if no image found
         
         """
         mo = re.search(r"(?m)^\[([^\]]+?(?:\.jpg|\.png|\.gif))\]", newsT)
@@ -1443,6 +1527,132 @@ function CreateNewsPrevNextLinks() {
             title = filename.replace("-", " ").replace("_", " ").title()
         CD["HTML_PAGE_TITLE"] = html.escape(title)
     
+    def _get_news_listing_items(fxNC, htmlDirs, wdataT):
+        """
+        Returns components of the news item source text:
+            - date (in "%Y-%b-%d" format)
+            - news item title
+            - HTML file path
+            - first image
+            - first image as linked thumb
+            - first paragraph
+        
+        Assumes that the title is in the CD variable and HTML file path is known
+        
+        """
+        # Get title, first paragraph, and file path relative to html dir
+        #nhTitle = html.unescape(CD["HTML_PAGE_TITLE"])
+        nhTitle = CD["HTML_PAGE_TITLE"]
+        # ...but the unescape doesn't catch everything, so we correct
+        #nhTitle = re.sub(r"&amp;([A-Za-z0-9#]{2,8};)", r"&\1", nhTitle)
+        nhFP = "" # First paragraph
+        with open(fxNC, mode="r") as f: fT = f.read()
+        # Get first image URL from news post (for <meta> cards), could be empty
+        nhImg = _get_news_post_img_url(fT)
+        # Get first image URL from news post (if thumbs are enabled), thumb if possible
+        nhImgThumb = ""; nhImgThumbLink = ""
+        if CD["NEWS_LIST_THUMBS"] == "YES":
+            nhImgThumb = _get_news_post_thumb_url(fT)
+            if nhImgThumb: nhImgThumbLink = "[" + nhImgThumb + "]"
+        # Get first paragraph, skip headings, link paras, img floats & directives
+        fT = re.sub(r"(?:@import:|@python:) \"[^\"\n]*\"", "", fT)
+        fT = re.sub(r"(?m)^\[[^\n]+?\]$", "", fT)
+        fT = re.sub(r"(?m)^\[[^\n]+?(?:\.jpg|\.png|\.gif|\.svg)\] (\S)",r"\1",fT)
+        mo = re.search(r"(?m)^\S.+?$(?=\n\n)", fT)
+        if mo: nhFP = mo.group()
+        # Get rid of any links in first paragraph
+        if "[" in nhFP and "]" in nhFP:
+            nhFP = re.sub(r"\[+[ ]*([^ \]]+)[ ]*\]+", r"\1", nhFP)
+            nhFP = re.sub(r"\[+[ ]*([^\]]+?)[ ]+[^ \]]+[ ]*\]+", r"\1", nhFP)
+        elif len(nhFP) > int(CD["NEWS_BLURB_LENGTH"]): # Nicely shorten by word
+            nhFP = nhFP[:int(CD["NEWS_BLURB_LENGTH"])].rsplit(maxsplit=1)[0]+"..."
+        nhPath = os.path.relpath(CD["htmlFilePath"], htmlDirs[0])
+        if nhImgThumbLink: nhImgThumbLink += "[" + nhPath + "] " # Make thumb link to post
+        # Date: get record or from filename or today's
+        dD = _get_file_record_date(fxNC, wdataT)
+        if dD:
+            dDS = dD.strftime("%Y-%b-%d")
+        else:
+            if CD["NEWS_DATE_FROM_FILENAME"] == "YES":
+                dDS = _get_date_from_filename(fxNC, mode="news_list")
+            else:
+                dDS = dt.date.today().strftime("%Y-%b-%d")
+        return dDS, nhTitle, nhPath, nhImg, nhImgThumb, nhImgThumbLink, nhFP
+        
+    def _edit_card_titles(hT):
+        """
+        Returns HTML text with Open Graph and Twitter Card <meta> title tags
+        edited to contain the full title of the page from <title></title>
+        
+        """
+        fullTitle = re.search(r"<title>([^<]+)</title>", hT)
+        if fullTitle:
+            tt = _html_escape_noamp(fullTitle.group(1)) # Needed again, escaping quotes
+            hT = re.sub(r'<meta [^>]*?((?:name|property)=["\'](?:og|twitter):title["\'])[^>]*>', 
+                                    '<meta \\1 content="'+tt+'" />', hT)
+        return hT
+        
+    def _edit_canonical_url(hT, docPath):
+        """
+        Returns HTML text with canonical <link> tag edited to the URL of
+        the current page. The <link> tag is assumed to exist already, this
+        code does not create it
+        
+        Does the same for Open Graph URL <meta> tag
+        
+        """
+        # Construct URL from html file path
+        linkURL = urljoin(CD["META_BASE_URL"], pathname2url(docPath))
+        # Replace in text
+        hT = re.sub(r'<link [^>]*?(rel=["\']canonical["\'])[^>]*>', 
+                                    '<link \\1 href="'+linkURL+'" />', hT)
+        hT = re.sub(r'<meta [^>]*?((?:name|property)=["\']og:url["\'])[^>]*>', 
+                                    '<meta \\1 content="'+linkURL+'" />', hT)
+        return hT
+        
+    def _edit_meta_cards(hT, nhTitle, nhFP, nhPath, nhImg):
+        """
+        Returns HTML text with <meta> og and twitter cards edited with
+        data from the calling news post: title, description, url & image
+        
+        If META_DESCRIPTION is YES, regular <meta name="description"...> tag
+        will be edited as well
+        
+        The <meta> tags are assumed to exist already, this code does not
+        create them
+        
+        """
+        # Remove text styling markup from title & description, html escape
+        nhTitle = _html_escape_noamp(_delete_inline_styling(nhTitle))
+        ogDesc = _html_escape_noamp(_delete_inline_styling(nhFP))
+        # Construct URL from html file path
+        ogURL = ""
+        if CD["META_BASE_URL"]:
+            ogURL = urljoin(CD["META_BASE_URL"], pathname2url(nhPath))
+        # Construct image URL from image file path
+        ogImg = ""
+        if nhImg and CD["META_BASE_URL"]:
+            if nhImg.startswith("http"): ogImg = nhImg
+            elif nhImg.startswith("www."): ogImg = "http://" + nhImg
+            else: ogImg = urljoin(CD["META_BASE_URL"], pathname2url(nhImg))
+        # Replace in text
+        if nhTitle:
+            hT = re.sub(r'<meta [^>]*?((?:name|property)=["\'](?:og|twitter):title["\'])[^>]*>', 
+                                    '<meta \\1 content="'+nhTitle+'" />', hT)
+        if ogDesc:
+            hT = re.sub(r'<meta [^>]*?((?:name|property)=["\'](?:og|twitter):description["\'])[^>]*>', 
+                                    '<meta \\1 content="'+ogDesc+'" />', hT)
+            if CD["META_DESCRIPTION"] == "YES":
+                hT = re.sub(r'<meta [^>]*?(name=["\']description["\'])[^>]*>', 
+                                        '<meta \\1 content="'+ogDesc+'" />', hT)
+        if ogImg:
+            hT = re.sub(r'<meta [^>]*?((?:name|property)=["\'](?:og|twitter):image["\'])[^>]*>', 
+                                    '<meta \\1 content="'+ogImg+'" />', hT)
+        if ogURL:
+            hT = re.sub(r'<meta [^>]*?((?:name|property)=["\']og:url["\'])[^>]*>', 
+                                        '<meta \\1 content="'+ogURL+'" />', hT)
+        return hT
+
     def _convert_sources_to_html(sourcesDirs, htmlDirs, sLxNC, wdataT):
         """
         Converts source ".txt"/".mdml" files that are either new or the user
@@ -1452,7 +1662,8 @@ function CreateNewsPrevNextLinks() {
         """
         nonlocal CD
         nonlocal preContentL
-        nonlocal jsLinkContentL
+        #nonlocal jsLinkContentL
+        nonlocal rebuildNewsList
         
         # Execute user functions file
         if os.path.exists(os.path.join(CD["siteDir"], "config/user_functions.py")):
@@ -1493,13 +1704,13 @@ function CreateNewsPrevNextLinks() {
                 print("       File '%s' not converted, Markdown not supported for news." % relfxNC)
                 continue
             preContentL = [] # Clear list of <pre> instances
-            jsLinkContentL = [] # Ditto js link args
+            #jsLinkContentL = [] # Ditto js link args
             docType = "" # Clear docType declaration
             print("\n  Converting to HTML (file {} of {}):".format(i+1, len(sLxNC)))
             print("       " + relfxNC)
             with open(fxNC, mode="r") as f:
                 hT = f.read()
-            # Protect links in news files before we prepend ../
+            # Protect links in news files before we prepend ../ to links from snippets
             if os.path.split(os.path.dirname(fxNC))[1] == "news":
                 hT = re.sub(r"(\[(?:[^\]]+[ ])?)([^ \]]+\])", r"\1Quicknr__newsLink__Quicknr\2", hT)
             # Update CD with source file path
@@ -1522,14 +1733,48 @@ function CreateNewsPrevNextLinks() {
             # Store doctype, we may need it later
             if re.match(r"\s*<!DOCTYPE[^>]+>", CD["HTML_HEAD"]):
                 docType = re.match(r"\s*<!DOCTYPE[^>]+>\n", CD["HTML_HEAD"]).group()
+                
             # Combine with snippets
             hT = CD["HTML_HEAD"] + hT + CD["HTML_TAIL"]
             # Update CD with html file path
             CD["htmlFilePath"] = hF
             # Date stamp for news, using original date from record if editing old news
             hT = _news_date_stamp(hT, wdataT)
-            # Get imports
+            
+            # Get imports, before <meta>/<link> tags are edited, so they can be
+            #   imported conditionally first
             hT = _import_files(hT)
+            
+            # --------------------- Meta tag edits
+            if CD["META_EDIT"] == "YES":
+                if os.path.splitext(os.path.basename(fxNC))[0] != "index":
+                    # Edit Open Graph and Twitter card <meta> titles
+                    # Home page is left at pre-existing value
+                    hT = _edit_card_titles(hT)
+                if CD["META_BASE_URL"]:
+                    # Edit canonical <link> and OG URL <meta> tags to page URL
+                    docPath = os.path.relpath(CD["htmlFilePath"], htmlDirs[0])
+                    hT = _edit_canonical_url(hT, docPath)
+            
+            # --------------------- If news post, prepare for listing "news.txt" 
+            #                           & get data for <meta> cards
+            if os.path.split(os.path.dirname(fxNC))[1] == "news":
+                # We read plain text original, so not affected by links protection above
+                dDS, nhTitle, nhPath, nhImg, nhImgThumb, nhImgThumbLink, nhFP = \
+                                        _get_news_listing_items(fxNC, htmlDirs, wdataT)
+                
+                # --------------------- Edit news <meta> tags in HTML, OG and Twitter
+                if CD["META_EDIT"] == "YES":
+                    hT = _edit_meta_cards(hT, nhTitle, nhFP, nhPath, nhImg)
+                        
+            # Prepend local links with "../" if file in news subfolder
+            if os.path.split(os.path.dirname(fxNC))[1] == "news":
+                hT = re.sub(r"((?:href|src)=\")(?!(?:\.\./|http:|https:|file:|ftp:|javascript:|mailto:))", 
+                                                                    r"\1../",hT)
+                hT = re.sub(r"((?:href|src)=\")\.\./(#)", r"\1\2", hT) # Correction (for bug?)
+                hT = re.sub(r"(?:\.\./)?Quicknr__newsLink__Quicknr", "", hT) # Ditto
+                hT = re.sub(r"((?:href|src)=\")(www\.)", r"\1http://\2", hT)
+                
             # Process user functions
             if "@python:" in hT:
                 while True:
@@ -1544,13 +1789,7 @@ function CreateNewsPrevNextLinks() {
                     if mo.group(1): # We have a function name
                         # No exception handling at this level
                         hT = eval(mo.group(1) + "(hT, " + str(mo.start()) + ", CD)")
-            # Prepend links with "../" if file in news subfolder
-            if os.path.split(os.path.dirname(fxNC))[1] == "news":
-                hT = re.sub(r"((?:href|src)=\")(?!(?:\.\./|http:|https:|file:|ftp:|javascript:|mailto:))", 
-                                                                    r"\1../",hT)
-                hT = re.sub(r"((?:href|src)=\")\.\./(#)", r"\1\2", hT) # Correction (for bug?)
-                hT = re.sub(r"(?:\.\./)?Quicknr__newsLink__Quicknr", "", hT) # Ditto
-                hT = re.sub(r"((?:href|src)=\")(www\.)", r"\1http://\2", hT)
+                
             # Enter IDs in DIV, P, H1-6, IMG, IFRAME, DL, DT, DD, OL, UL, and LI
             if CD["HTML_TAG_ID"] == "YES":
                 idCount = 0
@@ -1575,6 +1814,7 @@ function CreateNewsPrevNextLinks() {
             # Remove whitespace at start of <p> block 
             # for Chrome's handling of white-space CSS
             hT = re.sub(r"(<p [^>]+>)\s+", r"\1", hT)
+            
             hT = _indent_html_tree(hT)
             # Bring in <pre> code text (protected earlier)
             if preContentL:
@@ -1582,14 +1822,32 @@ function CreateNewsPrevNextLinks() {
                     #x = html.escape(x, quote=False) # Done already
                     hT = hT.replace(">Quicknr?=preText=?Quicknr</pre>", ">" + x + "</pre>", 1)
             # Bring in Javascript link argument text (protected earlier)
-            if jsLinkContentL:
-                for x in jsLinkContentL:
-                    #x = html.escape(x, quote=False) # Done already
-                    hT = hT.replace("(Quicknr?=jsLinkArgs=?Quicknr)", "(" + x + ")", 1)
+            #if jsLinkContentL:
+                #for x in jsLinkContentL:
+                    ##x = html.escape(x, quote=False) # Done already
+                    #hT = hT.replace("(Quicknr?=jsLinkArgs=?Quicknr)", "(" + x + ")", 1)
             # Correct overzealous char entity conversion of &
             hT = re.sub(r"&amp;([A-Za-z0-9#]{2,8};)", r"&\1", hT)
             # Remove whitespace around &nbsp;
             hT = re.sub(r"\s*(&nbsp;)\s*", r"\1", hT)
+            
+            # --------------------- Fill out and insert news list item block
+            if os.path.split(os.path.dirname(fxNC))[1] == "news":
+                if nhImgThumb:
+                    nlib = newsListItemBlock.replace("DATE_TEXT", dDS)
+                    nlib = nlib.replace("THUMB_URL", nhImgThumb)
+                else: # No thumbnail
+                    nlib = newsListItemBlockNoThumb.replace("DATE_TEXT", dDS)
+                nlib = nlib.replace("POST_URL", nhPath)
+                nlib = nlib.replace("HEADING_TEXT", 
+                        _bold_italic_mono(_html_escape_noamp(nhTitle, quote=False)))
+                nlib = nlib.replace("BLURB_TEXT", 
+                        _bold_italic_mono(_html_escape_noamp(nhFP, quote=False)))
+                nlib = nlib.replace("MORE_TEXT", CD["NEWS_MORE_PHRASE"])
+                # Place news list item block into news post HTML
+                hT = re.sub(r"(<div class=\"user_content[^>]+?>)",r'\1{}'.format(nlib),hT)
+            
+            # --------------------- Final
             # HTML5 tags correction from Quicknr's internal XHTML
             if CD["ALWAYS_XHTML_TAGS"] == "NO":
                 if re.match(r"(?i)\s*<\s*!\s*doctype\s+html\s*>", hT):
@@ -1605,49 +1863,16 @@ function CreateNewsPrevNextLinks() {
             
             # --------------------- If this was a news post, list in "news.txt"
             if os.path.split(os.path.dirname(fxNC))[1] == "news":
-                # Get title, first paragraph, and file path relative to html dir
-                nhTitle = html.unescape(CD["HTML_PAGE_TITLE"])
-                # ...but the unescape doesn't catch everything, so we correct
-                nhTitle = re.sub(r"&amp;([A-Za-z0-9#]{2,8};)", r"&\1", nhTitle)
-                nhFP = ""
-                with open(fxNC, mode="r") as f: fT = f.read()
-                # Get first image from news post, thumbnail if possible
-                nhImg = ""
-                if CD["NEWS_LIST_THUMBS"] == "YES":
-                    nhImg = _get_news_post_thumb_url(fT)
-                    if nhImg: nhImg = "[" + nhImg + "]"
-                # Get first paragraph, skip headings, link paras, img floats & directives
-                fT = re.sub(r"(?:@import:|@python:) \"[^\"\n]*\"", "", fT)
-                fT = re.sub(r"(?m)^\[[^\]\n]+\]$", "", fT)
-                fT = re.sub(r"(?m)^\[[^\]\n]+?(?:\.jpg|\.png|\.gif|\.svg)\] (\S)",r"\1",fT)
-                mo = re.search(r"(?m)^\S.+?$(?=\n\n)", fT)
-                if mo: nhFP = mo.group()
-                # Get rid of any links in first paragraph
-                if "[" in nhFP and "]" in nhFP:
-                    nhFP = re.sub(r"\[+[ ]*([^ \]]+)[ ]*\]+", "\1", nhFP)
-                    nhFP = re.sub(r"\[+[ ]*([^\]]+?)[ ]+[^ \]]+[ ]*\]+", r"\1", nhFP)
-                elif len(nhFP) > int(CD["NEWS_BLURB_LENGTH"]): # Nicely shorten by word
-                    nhFP = nhFP[:int(CD["NEWS_BLURB_LENGTH"])].rsplit(maxsplit=1)[0]+"..."
-                nhFP += " "
-                nhPath = os.path.relpath(CD["htmlFilePath"], htmlDirs[0])
-                if nhImg: nhImg += "[" + nhPath + "] " # Make thumb link to post
-                # Date: get record or from filename or today's
-                dD = _get_file_record_date(fxNC, wdataT)
-                if dD:
-                    dDS = dD.strftime("%Y-%b-%d")
-                else:
-                    if CD["NEWS_DATE_FROM_FILENAME"] == "YES":
-                        dDS = _get_date_from_filename(fxNC, mode="news_list")
-                    else:
-                        dDS = dt.date.today().strftime("%Y-%b-%d")
                 # Construct news listing item; linked heading and a para: title, img & intro
                 nhNItem = "   _"+dDS+"_ ["+nhTitle+" "+nhPath+"]\n\n"+\
-                                    nhImg+nhFP+"["+CD["NEWS_MORE_PHRASE"]+" "+nhPath+"]"
+                                    nhImgThumbLink+nhFP+" ["+CD["NEWS_MORE_PHRASE"]+" "+nhPath+"]"
                 # --------------------- News listing source file
                 nlT = ""
-                if os.path.exists(os.path.join(sourcesDirs[0], "news.txt")):
-                    with open(os.path.join(sourcesDirs[0], "news.txt"), mode="r") as f:
-                        nlT = f.read()
+                if not rebuildNewsList:
+                    if os.path.exists(os.path.join(sourcesDirs[0], "news.txt")):
+                        with open(os.path.join(sourcesDirs[0], "news.txt"), mode="r") as f:
+                            nlT = f.read()
+                rebuildNewsList = False # Re-set variable, must only be considered once
                 if not nlT:
                     nlT = "   "+CD["NEWS_LIST_TITLE"]+"\n\n"
                 else:
@@ -1663,8 +1888,10 @@ function CreateNewsPrevNextLinks() {
                 else: # New news item, place it between title and first old item
                     nlT = nlT.split("\n\n")[0]+"\n\n"+nhNItem+"\n\n"+nlT.split("\n\n",maxsplit=1)[1]
                 # Shorten list length to config preference by dropping last news item
-                if len(nlT.split("\n\n")[1:]) > 2*int(CD["NEWS_LIST_ITEMS"]):
-                    nlT = "\n\n".join(nlT.split("\n\n")[:-2])
+                niCount = len(nlT.split("\n\n")[1:-1])
+                if niCount > 2*int(CD["NEWS_LIST_ITEMS"]):
+                    niCount = niCount - (2*int(CD["NEWS_LIST_ITEMS"])) + 1
+                    nlT = "\n\n".join(nlT.split("\n\n")[:-niCount])+"\n\n"
                 # Tidy up, just in case
                 nlT = re.sub(r"[ ]+\n", "\n", nlT)
                 nlT = re.sub(r"(\n\n)\n+", r"\1", nlT)
@@ -1909,26 +2136,31 @@ function CreateNewsPrevNextLinks() {
                 rPaths.append(os.path.relpath(os.path.join(dp, fn), CD["siteDir"]))
         return rPaths
     
-    def _check_file_extensions_spaces():
+    def _check_file_folder_names():
         """
         Checks that all files in the website folder have file extensions
-        and no spaces in their names
+        and no spaces or html <>&"' characters in their names
         
-        Conversely, checks that folders have no spaces and no extensions
+        Conversely, checks that folders have no spaces, html characters and 
+        no extensions
         
         """
-        fpL = []; spL = []; dxL = []; dsL = []
+        fpL = []; spL = []; dxL = []; dsL = []; fhL = []; dhL = []
         for dp, dn, fns in os.walk(CD["siteDir"]):
             for d in dn:
                 if " " in d:
                     dsL.append(os.path.relpath(os.path.join(dp, d), CD["siteDir"]))
                 if os.path.splitext(d)[1]:
                     dxL.append(os.path.relpath(os.path.join(dp, d), CD["siteDir"]))
+                if "<" in d or ">" in d or "&" in d or "'" in d or '"' in d:
+                    dhL.append(os.path.relpath(os.path.join(dp, d), CD["siteDir"]))
             for fn in fns:
                 if " " in fn:
                     spL.append(os.path.relpath(os.path.join(dp, fn), CD["siteDir"]))
                 if not os.path.splitext(fn)[1]:
                     fpL.append(os.path.relpath(os.path.join(dp, fn), CD["siteDir"]))
+                if "<" in fn or ">" in fn or "&" in fn or "'" in fn or '"' in fn:
+                    fhL.append(os.path.relpath(os.path.join(dp, fn), CD["siteDir"]))
         if spL:
             sp = "\n         ".join(spL)
             _say_error( "Error: some files in '{}' have spaces in their names:\n\n"
@@ -1942,6 +2174,12 @@ function CreateNewsPrevNextLinks() {
                         "           {}\n\n"
                         "       Fix and try again.\n"
                         "       Quit.".format(CD["siteFolder"],sp))
+        if fhL:
+            sp = "\n         ".join(fhL)
+            _say_error( "Error: some files in '{}' have html characters in their names:\n\n"
+                        "           {}\n\n"
+                        "       Fix and try again.\n"
+                        "       Quit.".format(CD["siteFolder"],sp))
         if dsL:
             sp = "\n         ".join(dsL)
             _say_error( "Error: some folders in '{}' have spaces in their names:\n\n"
@@ -1951,6 +2189,12 @@ function CreateNewsPrevNextLinks() {
         if dxL:
             sp = "\n         ".join(dxL)
             _say_error( "Error: some folders in '{}' have file extensions:\n\n"
+                        "           {}\n\n"
+                        "       Fix and try again.\n"
+                        "       Quit.".format(CD["siteFolder"],sp))
+        if dhL:
+            sp = "\n         ".join(dhL)
+            _say_error( "Error: some folders in '{}' have html characters in their names:\n\n"
                         "           {}\n\n"
                         "       Fix and try again.\n"
                         "       Quit.".format(CD["siteFolder"],sp))
@@ -2007,6 +2251,9 @@ function CreateNewsPrevNextLinks() {
             * if uploaded already, HTML file from server
         
         """
+        
+        # --------------------- Get news post to delete, source & html
+        
         filesToDelete = []
         nfL = os.listdir(os.path.join(CD["siteDir"], "page_sources/news"))
         if len(nfL) == 0:
@@ -2036,7 +2283,9 @@ function CreateNewsPrevNextLinks() {
                         "{}(or Q to quit): ".format(len(filesToDelete)%2 and " " or "s locally and from the server "))
             if not r or r in "qQ": _say_quit()
             elif r in "yY": break
+            
         # --------------------- Delete files
+        
         print("")
         relSFP = os.path.relpath(filesToDelete[0], CD["siteDir"])
         with open(qnrDataPath, mode="r") as f: qdT = f.read()
@@ -2062,7 +2311,7 @@ function CreateNewsPrevNextLinks() {
         with open(qnrDataPath, mode="w") as f: f.write(qdT)
         # Delete files locally
         for x in filesToDelete: os.remove(x)
-        if len(filesToDelete) > 1:
+        if len(filesToDelete) > 1: # We assume html exists if in news list
             # Delete item from news listing
             newsListFP = os.path.join(CD["siteDir"], "page_sources/news.txt")
             newsHFP = os.path.relpath(filesToDelete[1], 
@@ -2138,7 +2387,7 @@ function CreateNewsPrevNextLinks() {
         with open(os.path.join(CD["siteDir"], "config/config_old_backup.txt"), mode="r") as f:
             fT = f.read()
             if fT != wT:
-                _say_error( "Error: Config file upgrade aborted due to problem with backup.\n"
+                _say_error( "Error: Config file upgrade aborted due to a problem with backup.\n"
                             "       Quit.")
         # Write upgraded website file
         with open(w_configPath, mode="w") as f: f.write(qT)
@@ -2172,11 +2421,13 @@ function CreateNewsPrevNextLinks() {
     CD["siteFolder"] = _ui_get_site_dir() # May create website (& data file)
     CD["siteDir"] = os.path.join(qnrDir, "websites/" + CD["siteFolder"])
     qnrDataPath = os.path.join(CD["siteDir"], "quicknr_private/quicknr_data.txt")
-    _check_file_extensions_spaces() # Quit if no extensions, or have spaces in names
+    _check_file_folder_names() # Quit if invalid names
     with open(qnrDataPath, mode="r") as f: qnrDT = f.read()
     if cliArgs and cliArgs.convertall:
         # All sources to be converted again
         qnrDT = _mark_all_changed(qnrDT)
+        # Mark news.txt to be rebuilt
+        rebuildNewsList = True
     # --------------------- Get site configuration settings
     CD = _get_site_config(CD)
     # --------------------- Scan source files for new or changed
@@ -2247,10 +2498,12 @@ function CreateNewsPrevNextLinks() {
                     if not i: jsfT = '"'+x[1]+'"];\n\n//==DO_NOT_EDIT_THIS_LINE'+jsfT
                     else: jsfT = '"' + x[1] + '", ' + jsfT
                 jsfT = '\nvar news_files_list = [' + jsfT
+                jsfT = '\nvar news_list_items = ' + CD["NEWS_LIST_ITEMS"] + ';' + jsfT
                 jsfT = '\nvar news_next_link_text = "' + CD["NEWS_NEXT_LINK"] + '";' + jsfT
                 jsfT = '\nvar news_prev_link_text = "' + CD["NEWS_PREV_LINK"] + '";' + jsfT
                 with open(jsfP, mode="w") as f: f.write(jsfT)
         print("\nDone.")
+        
     # --------------------- Upload files to server
     # First, record news images if they are new (not yet in record) or changed in size
     newsImgDir = os.path.join(htmlDirs[0], "news/images")
