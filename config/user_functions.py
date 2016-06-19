@@ -32,9 +32,8 @@
 #    * whitespace in and around tags is corrected                      #
 #    * id attributes are entered in tags (if set so in preferences)    #
 #    * HTML tree is indented                                           #
-#    * contents of <pre> tags and arguments of Javascript function     #
-#      calls are entered back into the document after they had been    #
-#      protected from processing                                       #
+#    * contents of <pre> tags are entered back into the document       #
+#      after they had been protected from processing                   #
 #    * overzealous character entity conversions are corrected          #
 #    * in news post pages, a commented-out news list item block is     #
 #      placed at the beginning of the "user_content" DIV (for AJAX     #
