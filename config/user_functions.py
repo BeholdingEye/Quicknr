@@ -4,7 +4,7 @@
 #                                                                      #
 #  Define the functions that will be called from HTML snippets with    #
 #  '@python: "function-name"' directives to work on completed HTML     #
-#  output of a converted source just before it is written to file.     #
+#  output of a converted source before it is written to file.          #
 #                                                                      #
 #  The function must accept exactly three positional parameters:       #
 #                                                                      #
@@ -26,6 +26,27 @@
 #  This file as a whole will be read and executed by Quicknr before    #
 #  the relevant function is called. It is therefore safest to not      #
 #  include any code outside function (or class) definitions.           #
+#                                                                      #
+#  Note that after user functions are executed, Quicknr still          #
+#  performs some tidying up before writing to HTML file:               #
+#    * whitespace in and around tags is corrected                      #
+#    * id attributes are entered in tags (if set so in preferences)    #
+#    * HTML tree is indented                                           #
+#    * contents of <pre> tags and arguments of Javascript function     #
+#      calls are entered back into the document after they had been    #
+#      protected from processing                                       #
+#    * overzealous character entity conversions are corrected          #
+#    * in news post pages, a commented-out news list item block is     #
+#      placed at the beginning of the "user_content" DIV (for AJAX     #
+#      retrieval when loading more items on the news listing page)     #
+#    * XHML style " />" tag endings are converted to HTML ">" syntax   #
+#      if the DOCTYPE is HTML 5                                        #
+#                                                                      #
+#  Because Quicknr works with XHTML and HTML, custom functions should  #
+#  assume the tags they search for could be in either format. When     #
+#  inserting tags, XHTML syntax is best. XHTML is the syntax used by   #
+#  Quicknr internally, and converted to HTML if need be just before    #
+#  writing to file.                                                    #
 #                                                                      #
 ########################################################################
 
