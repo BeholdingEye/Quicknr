@@ -1,5 +1,7 @@
 ########################################################################
 #                                                                      #
+#                            QUICKNR 1.8.0                             #
+#                                                                      #
 #                             ===========                              #
 #                             PREFERENCES                              #
 #                             ===========                              #
@@ -157,30 +159,39 @@ NEWS_DATE_FROM_FILENAME: NO
 #  listing file, "news.txt" in sources folder, which is then also      #
 #  converted to HTML.                                                  #
 #                                                                      #
-#  The first preference below controls the number of latest news       #
-#  items listed in the "news.txt" file. The default is 50.             #
+#  The first preference below, NEWS_LIST_ITEMS, controls the number    #
+#  of latest news items listed in the "news.txt" file. Default is 20.  #
+#  Keep this value sane for reasonable loading speeds. A number        #
+#  between 10 and 50 is recommended. If you change the value after     #
+#  pages have already been converted, run Quicknr with the "-c"        #
+#  commandline option (re-converting all pages), to re-flow the news.  #
+#  This number will also be used by the "Load More" Javascript button  #
+#  appearing at the end of the news list.                              #
 #                                                                      #
-#  The second preference sets the title of the news listing page. The  #
+#  NEWS_LIST_TITLE sets the title of the news listing page. The        #
 #  default value is "Latest News".                                     #
 #                                                                      #
-#  The third preference sets the length limit of the introductory      #
+#  NEWS_BLURB_LENGTH sets the length limit of the introductory         #
 #  paragraph of a linked news item featured on the news listing page.  #
 #  Default is 300.                                                     #
 #                                                                      #
-#  The fourth preference is the link text to appear at the end of the  #
+#  NEWS_MORE_PHRASE is the link text to appear at the end of the       #
 #  blurb. Default is "More...".                                        #
 #                                                                      #
-#  The fifth preference sets the position of the link to the news      #
-#  listing page, on the news post page. Valid values are START and     #
-#  END, default being END.                                             #
+#  NEWS_LIST_LINK sets the text of the link to the news listing page,  #
+#  on the news post page. The default value is "Latest News".          #
 #                                                                      #
-#  The last preference sets the prefix for the news link. Default is   #
-#  the empty string "".                                                #
+#  NEWS_LIST_LINK_POSITION sets the position of the link to the news   #
+#  listing page. Valid values are START and END, default being END.    #
 #                                                                      #
-NEWS_LIST_ITEMS: 50
+#  NEWS_LIST_LINK_PREFIX sets the prefix for the news link. Default    #
+#  is the empty string "".                                             #
+#                                                                      #
+NEWS_LIST_ITEMS: 20
 NEWS_LIST_TITLE: "Latest News"
 NEWS_BLURB_LENGTH: 300
 NEWS_MORE_PHRASE: "More..."
+NEWS_LIST_LINK: "Latest News"
 NEWS_LIST_LINK_POSITION: END
 NEWS_LIST_LINK_PREFIX: ""
 
@@ -241,38 +252,18 @@ NEWS_NEXT_LINK: "Newer &gt;"
 #  saved as progressive JPEGs, so that at least a low res version is   #
 #  shown before the image loads completely.                            #
 #                                                                      #
-#  NEWS_LIST_THUMB_SIZE sets the pixel size of the rectangular thumb   #
-#  that will be created. Default value is 100.                         #
+#  NEWS_LIST_THUMB_SIZE sets the pixel length of the longest side of   #
+#  the thumbnail that will be created. Default value is 100.           #
+#                                                                      #
+#  Since Quicknr version 1.8 thumbs can be created square, the old     #
+#  behaviour, or keep their original aspect ratio. For backwards       #
+#  compatibility, NEWS_LIST_THUMB_SQUARE is set to YES by default.     #
+#  Change to NO to enable rectangular thumbs (that can then be styled  #
+#  square with CSS).                                                   #
 #                                                                      #
 NEWS_LIST_THUMBS: YES
 NEWS_LIST_THUMB_SIZE: 100
-
-########################################################################
-#                                                                      #
-#                        COPY JAVASCRIPT FILES                         #
-#                                                                      #
-#  If the Quicknr application folder (the folder containing            #
-#  "Quicknr_App.py") contains a folder named "javascript", and this    #
-#  preference is set to YES (the default value), then all files from   #
-#  the "javascript" folder will be copied to the "public_html/res/js"  #
-#  directory when a new website is created.                            #
-#                                                                      #
-#  The Quicknr package does not include the "javascript" folder. This  #
-#  feature exists in case you have one or more Javascript files that   #
-#  you want to include in every website; create the folder yourself    #
-#  and place the files in it.                                          #
-#                                                                      #
-#  Disable with NO.                                                    #
-#                                                                      #
-#  Please note that this setting only works globally, not per          #
-#  website. That's because the setting is actioned when a website is   #
-#  created, it has no effect afterwards.                               #
-#                                                                      #
-#  The "javascript" folder should not contain a file named "news.js".  #
-#  Quicknr creates such a file from code and will overwrite any        #
-#  "news.js" file copied from the "javascript" folder.                 #
-#                                                                      #
-COPY_JAVASCRIPT_FILES: YES
+NEWS_LIST_THUMB_SQUARE: YES
 
 ########################################################################
 #                                                                      #
@@ -284,20 +275,24 @@ COPY_JAVASCRIPT_FILES: YES
 #  "href". The <span> will have a class name of "js_call". Default     #
 #  value is YES, disable with NO.                                      #
 #                                                                      #
-#  The Javascript function call must use single quotes "'" for string  #
-#  arguments:                                                          #
+#  The function call must consist of a name followed by a pair of      #
+#  parenthesis, optionally containing an argument. The call must not   #
+#  contain characters other than [A-Za-z0-9_-'.;:] and one pair of     #
+#  parenthesis:                                                        #
 #                                                                      #
 #  [Click here AlertUser('Hello')]                                     #
 #                                                                      #
-#  In addition, the part before the parenthesis cannot contain         #
-#  double colons ":". If it does, it will be processed as any other    #
-#  <a> link. This means that by placing "javascript:" before the       #
-#  function name, you can switch from <span> to <a>.                   #
+#  If the function call contains a double colon ":", it will be        #
+#  processed as any other <a> link. This means that by placing         #
+#  "javascript:" before the function name, you can switch from <span>  #
+#  to <a>.                                                             #
 #                                                                      #
 #  If you require that other text always immediately precede or        #
 #  succeed the function call, you can set the two _PRE and _POST       #
-#  preferences that follow. Backslash "\" escapes are not allowed in   #
-#  them. By default the values are empty.                              #
+#  preferences that follow.                                            #
+#                                                                      #
+#  The only characters allowed in _PRE/_POST are [A-Za-z0-9_-'.;:()]   #
+#  and spaces. By default the values are empty.                        #
 #                                                                      #
 #  Unless you're sure you want them changed, these preferences should  #
 #  be left unchanged. If changed often and handled carelessly, you     #
@@ -342,6 +337,65 @@ FTP_DEBUG: "0"
 
 ########################################################################
 #                                                                      #
+#                               META EDIT                              #
+#                                                                      #
+#  Open Graph and Twitter Cards are supported - mostly empty <meta>    #
+#  tags are by default included in the Head snippet below. These tags  #
+#  will be used for every page that Quicknr creates.                   #
+#                                                                      #
+#  For news pages, it is desirable that the cards link to the news     #
+#  page directly. Quicknr can do this automatically, if META_EDIT is   #
+#  set to YES, the default value. Change to NO to disable.             #
+#                                                                      #
+#  If META_DESCRIPTION is YES, the generic <meta> tag with the         #
+#  'name="description"' attribute will be edited as well. The default  #
+#  value is NO because news blurbs (derived from the first news        #
+#  paragraph and used in OG/Twitter description) can be quite random.  #
+#                                                                      #
+#  This feature requires that the relevant <meta> tags already exist.  #
+#  Quicknr will edit them, but won't create them if they are missing.  #
+#                                                                      #
+#  META_BASE_URL must be set to the base URL for the site, the URL     #
+#  that is the equivalent of the "public_html" folder in your website  #
+#  locally. Quicknr will then combine the base URL with the relative   #
+#  URL (relative to "public_html") of the news post HTML file and      #
+#  enter it as the OG URL property. If this value is left empty, pre-  #
+#  existing data from the snippet will be used instead.                #
+#                                                                      #
+#  For example, if the base URL is "http://www.example.com/subsite/"   #
+#  and the news post relative URL is "news/first-post.html", the URL   #
+#  entered in the OG URL property will be                              #
+#  "http://www.example.com/subsite/news/first-post.html".              #
+#                                                                      #
+#  Note that site sub-directories, such as "subsite" in the example    #
+#  above, must have the trailing slash "/" to work correctly.          #
+#                                                                      #
+#  This feature uses the first image in the news post as the image     #
+#  that will be used in the card. The first paragraph will be used as  #
+#  the card description, and the title as its title.                   #
+#                                                                      #
+#  Apart from title, description, url and image, other card            #
+#  properties will be retained from the data in the snippet, and must  #
+#  be set there manually.                                              #
+#                                                                      #
+#  On pages other than news, OG and Twitter Card title and URL will    #
+#  be edited as detailed above, but the description and image URL      #
+#  will be left at their pre-existing values. You may want to          #
+#  conditionally import these tags or process them with a custom       #
+#  Python function.                                                    #
+#                                                                      #
+#                            CANONICAL LINK                            #
+#                                                                      #
+#  If META_BASE_URL is not empty, it will also be used to edit the     #
+#  canonical <link> tag to the URL of the page being converted (if     #
+#  META_EDIT is set to YES).                                           #
+#                                                                      #
+META_EDIT: YES
+META_DESCRIPTION: NO
+META_BASE_URL: ""
+
+########################################################################
+#                                                                      #
 #                             DEBUG ERRORS                             #
 #                                                                      #
 #  When mistakes are made or errors encountered, Quicknr responds      #
@@ -367,6 +421,10 @@ DEBUG_ERRORS: NO
 #  format will always be XHTML, regardless of the DOCTYPE. This was    #
 #  the behaviour in Quicknr prior to version 1.6. Default value is     #
 #  NO.                                                                 #
+#                                                                      #
+#  Note that HTML-style tags in snippets, imports and custom Python    #
+#  functions will not be converted to XHTML. If you want XHTML output, #
+#  ensure those tags are XHTML.                                        #
 #                                                                      #
 ALWAYS_XHTML_TAGS: NO
 
@@ -523,11 +581,13 @@ HTML_HEAD: """
 <meta name="og:title" content="">
 <meta name="og:description" content="">
 <meta name="og:type" content="website">
+<meta name="og:site_name" content="">
 <meta name="og:url" content="">
 <meta name="og:image" content="">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary">
+<!-- alernative content: summary_large_image -->
 <meta name="twitter:site" content="">
 <meta name="twitter:title" content="">
 <meta name="twitter:description" content="">
@@ -539,10 +599,10 @@ HTML_HEAD: """
 <link rel="icon" href="res/img/appleicon.png" type="image/png">
 <link rel="apple-touch-icon" href="res/img/appleicon.png">
 <link rel="stylesheet" href="res/css/main.css" type="text/css">
-<script src="res/js/main.js" type="text/javascript"></script>
+<script src="res/js/lib.js" type="text/javascript"></script>
 <script src="res/js/news.js" type="text/javascript"></script>
 </head>
-<body onload="CreateNewsPrevNextLinks();">
+<body onload="NewsFunctions();">
 <div class="page">
 @import: "all.txt"
 """
