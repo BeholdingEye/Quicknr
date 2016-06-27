@@ -10,7 +10,7 @@
 #                       from plain text sources                        #
 #                                                                      #
 #                                                                      #
-#                            Version 1.8.0                             #
+#                            Version 1.9.0                             #
 #                                                                      #
 #            Copyright 2016 Karl Dolenc, beholdingeye.com.             #
 #                         All rights reserved.                         #
@@ -95,7 +95,7 @@ def Quicknr():
     
     """
     
-    print("\n===================== QUICKNR 1.8.0 =====================\n")
+    print("\n===================== QUICKNR 1.9.0 =====================\n")
     
     # --------------------- App defaults
     
@@ -114,17 +114,17 @@ def Quicknr():
                     QLM_OR_MARKDOWN = "QLM",
                     MARKDOWN_TITLING = "YES",
                     HTML_TAG_ID = "NO",
-                    NEWS_LIST_ITEMS = "50",
+                    NEWS_LIST_ITEMS = "20",
                     NEWS_LIST_TITLE = "Latest News",
                     NEWS_BLURB_LENGTH = "300",
-                    NEWS_MORE_PHRASE = "More...",
+                    NEWS_MORE_PHRASE = "More&gt;",
                     NEWS_LIST_LINK = "Latest News",
                     NEWS_LIST_LINK_POSITION = "END",
                     NEWS_LIST_LINK_PREFIX = "",
                     NEWS_DATE_FORMAT = "%A, %d %B %Y",
                     NEWS_DATE_FROM_FILENAME = "NO",
-                    NEWS_PREV_LINK = "&lt; Older",
-                    NEWS_NEXT_LINK = "Newer &gt;",
+                    NEWS_PREV_LINK = "&lt;&nbsp;Older",
+                    NEWS_NEXT_LINK = "Newer&nbsp;&gt;",
                     NEWS_LIST_THUMBS = "YES",
                     NEWS_LIST_THUMB_SIZE = "100",
                     NEWS_LIST_THUMB_SQUARE = "YES",
@@ -178,10 +178,11 @@ def Quicknr():
     newsListItemBlock = """
 <!-- Quicknr-news-list-item-block
 <div class="headed_section">
-  <h2 class="heading"><span>DATE_TEXT</span> <a href="POST_URL">HEADING_TEXT</a></h2>
+  <h2 class="heading"><span style="font-style:italic">DATE_TEXT</span> <a href="POST_URL">HEADING_TEXT</a></h2>
   <div class="section">
-    <div class="imgfloat link_img">
-      <a href="POST_URL"><img src="THUMB_URL" alt=""></a>
+    <div style="background-image:url('THUMB_URL')" class="imgfloat link_img">
+      <a href="POST_URL">
+      </a>
     </div>
     <p class="p_1 img_p">BLURB_TEXT <a href="POST_URL">MORE_TEXT</a></p>
   </div>
@@ -193,7 +194,7 @@ def Quicknr():
     newsListItemBlockNoThumb = """
 <!-- Quicknr-news-list-item-block
 <div class="headed_section">
-  <h2 class="heading"><span>DATE_TEXT</span> <a href="POST_URL">HEADING_TEXT</a></h2>
+  <h2 class="heading"><span style="font-style:italic">DATE_TEXT</span> <a href="POST_URL">HEADING_TEXT</a></h2>
   <div class="section">
     <p class="p_1">BLURB_TEXT <a href="POST_URL">MORE_TEXT</a></p>
   </div>
@@ -397,6 +398,17 @@ def Quicknr():
             # --------------------- Copy Quicknr config folder to website
             cPath = os.path.join(qnrDir, "websites/" + r1 + "/config")
             shutil.copytree(os.path.join(qnrDir, "config"), cPath)
+            # --------------------- Copy base template CSS files to website
+            try:
+                destFolder = os.path.join(qnrDir, "websites/" + r1 + "/public_html/res/css")
+                srcFile = os.path.join(qnrDir, "templates/quicknr_base/res/css/quicknr_base.css")
+                shutil.copy(srcFile, destFolder)
+                srcFile = os.path.join(qnrDir, "templates/quicknr_base/res/css/quicknr_base_newslist.css")
+                shutil.copy(srcFile, destFolder)
+                srcFile = os.path.join(qnrDir, "templates/quicknr_base/res/css/quicknr_base_newspost.css")
+                shutil.copy(srcFile, destFolder)
+            except:
+                pass # No action on error
             # --------------------- Copy Quicknr Javascript files to website
             for x in ["javascript", "Javascript"]:
                 if os.path.exists(os.path.join(qnrDir, x)):
@@ -431,7 +443,7 @@ def Quicknr():
                                        
               /config/import/      - Files to be imported with import
                                      directives from head or tail
-                                     snippets
+                                     snippets or text sources
                                        
               /page_sources/       - Location of your source files
                                      that will be combined with HTML
@@ -1163,7 +1175,7 @@ def Quicknr():
                             pT += '</div>'
                     
                     # --------------------- Import and Python directives
-                    elif re.match(r"@python:|@import:", pT):
+                    elif re.match(r"(?m)(?:@python:|@import:)[ ]+['\"][^'\"]+['\"][ ]*$", pT):
                         pass # Don't convert directives to HTML
                     
                     # --------------------- Lists
@@ -1192,7 +1204,7 @@ def Quicknr():
                     elif "Quicknr?=preText=?Quicknr" in pT and pT.lower().startswith("code"):
                         cCount += 1
                         pT1 = pT.split(":", 1)[0]
-                        npT = '<div class="{} codeblock_{} {} section_{}">\n{}\n</div>'
+                        npT = '<div class="{} codeblock codeblock_{} {} section_{}">\n{}\n</div>'
                         pT = '<pre class="code">Quicknr?=preText=?Quicknr</pre>'
                         dClass = pT1.lower()
                         if dClass != "code": dClass = "code "+dClass
@@ -1243,13 +1255,15 @@ def Quicknr():
                                 ipT += ' onclick="{}">\n'
                             else:
                                 ipT = '<div class="imgfloat link_img imgfloat_{} {} section_{}">\n<a href="{}">\n'
-                        ipT += '<img src="{}" alt="{}" />\n'
-                        if clickLinkURL:
-                            ipT = ipT.format(fCount,fCount%2 and "odd" or "even",sCount,
-                                                        clickLinkURL,linkURL,linkText)
+                        if os.path.splitext(os.path.basename(CD["sourceFilePath"]))[0] == "news":
+                            ipT = re.sub(r'(<div )(class="imgfloat)', 
+                                    '\\1style="background-image:url(\'{}\')" \\2'.format(linkURL), ipT)
                         else:
-                            ipT = ipT.format(fCount,fCount%2 and "odd" or "even",sCount,
-                                                        linkURL,linkText)
+                            ipT += '<img src="{}" alt="{}" />\n'.format(linkURL,linkText)
+                        if clickLinkURL:
+                            ipT = ipT.format(fCount,fCount%2 and "odd" or "even",sCount,clickLinkURL)
+                        else:
+                            ipT = ipT.format(fCount,fCount%2 and "odd" or "even",sCount)
                         if clickLinkURL:
                             if '<span class="js_call"' in ipT:
                                 ipT += '</span>\n'
@@ -1554,11 +1568,13 @@ def Quicknr():
         if CD["NEWS_LIST_THUMBS"] == "YES":
             nhImgThumb = _get_news_post_thumb_url(fT)
             if nhImgThumb: nhImgThumbLink = "[" + nhImgThumb + "]"
-        # Get first paragraph, skip headings, link paras, img floats & directives
+        # Get first paragraph; skip directives, link paragraphs, img floats, blocks
+        #   and headings
         fT = re.sub(r"(?:@import:|@python:) \"[^\"\n]*\"", "", fT)
         fT = re.sub(r"(?m)^\[[^\n]+?\]$", "", fT)
         fT = re.sub(r"(?m)^\[[^\n]+?(?:\.jpg|\.png|\.gif|\.svg)\] (\S)",r"\1",fT)
-        mo = re.search(r"(?m)^\S.+?$(?=\n\n)", fT)
+        fT = re.sub(r"(?ms)^(?:(?:\w+:\s*\S)|(?:\S[^:\n]*:\n[ ]*\S)).+?$(?=\n\n)", "", fT)
+        mo = re.search(r"(?ms)^\S.+?$(?=\n\n)", fT) # Corrected to allow line breaks
         if mo: nhFP = mo.group()
         # Get rid of any links in first paragraph
         if "[" in nhFP and "]" in nhFP:
@@ -1864,8 +1880,11 @@ def Quicknr():
             # --------------------- If this was a news post, list in "news.txt"
             if os.path.split(os.path.dirname(fxNC))[1] == "news":
                 # Construct news listing item; linked heading and a para: title, img & intro
+                nhMore = "&nbsp;["+CD["NEWS_MORE_PHRASE"]+" "+nhPath+"]"
+                # If no intro, save news list from breakdown with link
+                if not nhFP: nhMore = "&nbsp;["+"Read the article"+" "+nhPath+"]"
                 nhNItem = "   _"+dDS+"_ ["+nhTitle+" "+nhPath+"]\n\n"+\
-                                    nhImgThumbLink+nhFP+" ["+CD["NEWS_MORE_PHRASE"]+" "+nhPath+"]"
+                                    nhImgThumbLink+nhFP+nhMore
                 # --------------------- News listing source file
                 nlT = ""
                 if not rebuildNewsList:
