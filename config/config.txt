@@ -1,6 +1,6 @@
 ########################################################################
 #                                                                      #
-#                            QUICKNR 1.8.0                             #
+#                            QUICKNR 1.9.0                             #
 #                                                                      #
 #                             ===========                              #
 #                             PREFERENCES                              #
@@ -173,10 +173,10 @@ NEWS_DATE_FROM_FILENAME: NO
 #                                                                      #
 #  NEWS_BLURB_LENGTH sets the length limit of the introductory         #
 #  paragraph of a linked news item featured on the news listing page.  #
-#  Default is 300.                                                     #
+#  This value must be greater than 0. Default is 300.                  #
 #                                                                      #
 #  NEWS_MORE_PHRASE is the link text to appear at the end of the       #
-#  blurb. Default is "More...".                                        #
+#  blurb. Default is "More&gt;".                                       #
 #                                                                      #
 #  NEWS_LIST_LINK sets the text of the link to the news listing page,  #
 #  on the news post page. The default value is "Latest News".          #
@@ -190,7 +190,7 @@ NEWS_DATE_FROM_FILENAME: NO
 NEWS_LIST_ITEMS: 20
 NEWS_LIST_TITLE: "Latest News"
 NEWS_BLURB_LENGTH: 300
-NEWS_MORE_PHRASE: "More..."
+NEWS_MORE_PHRASE: "More&gt;"
 NEWS_LIST_LINK: "Latest News"
 NEWS_LIST_LINK_POSITION: END
 NEWS_LIST_LINK_PREFIX: ""
@@ -204,7 +204,7 @@ NEWS_LIST_LINK_PREFIX: ""
 #  "public_html/res/js/news.js" file.                                  #
 #                                                                      #
 #  The two options below control the text that will be used for the    #
-#  links, "&lt; Older" and "Newer &gt;" being default values.          #
+#  links, "&lt;&nbsp;Older" and "Newer&nbsp;&gt;" are default values.  #
 #                                                                      #
 #  No HTML escaping is done by Quicknr on these values.                #
 #                                                                      #
@@ -216,8 +216,8 @@ NEWS_LIST_LINK_PREFIX: ""
 #  Previous, "next_link" for Next, and "listing_link" for the news     #
 #  listing page link.                                                  #
 #                                                                      #
-NEWS_PREV_LINK: "&lt; Older"
-NEWS_NEXT_LINK: "Newer &gt;"
+NEWS_PREV_LINK: "&lt;&nbsp;Older"
+NEWS_NEXT_LINK: "Newer&nbsp;&gt;"
 
 ########################################################################
 #                                                                      #
@@ -260,6 +260,11 @@ NEWS_NEXT_LINK: "Newer &gt;"
 #  compatibility, NEWS_LIST_THUMB_SQUARE is set to YES by default.     #
 #  Change to NO to enable rectangular thumbs (that can then be styled  #
 #  square with CSS).                                                   #
+#                                                                      #
+#  Since Quicknr version 1.9 news thumbs are loaded as background      #
+#  images in their containing <DIV>, making them easier to position    #
+#  with CSS. This feature is backwards incompatible; CSS styles of     #
+#  older sites will need to be adjusted.                               #
 #                                                                      #
 NEWS_LIST_THUMBS: YES
 NEWS_LIST_THUMB_SIZE: 100
@@ -598,12 +603,15 @@ HTML_HEAD: """
 <link rel="shortcut icon" href="res/img/favicon.ico" type="image/x-icon">
 <link rel="icon" href="res/img/appleicon.png" type="image/png">
 <link rel="apple-touch-icon" href="res/img/appleicon.png">
-<link rel="stylesheet" href="res/css/main.css" type="text/css">
+<link rel="stylesheet" href="res/css/quicknr_base.css" type="text/css">
+@python: "page_style_link"
 <script src="res/js/lib.js" type="text/javascript"></script>
 <script src="res/js/news.js" type="text/javascript"></script>
 </head>
 <body onload="NewsFunctions();">
 <div class="page">
+<div class="page_header">
+</div>
 @import: "all.txt"
 """
 
@@ -614,6 +622,8 @@ HTML_HEAD: """
 #  HTML code from the end of page content to the closing </html> tag.  #
 #                                                                      #
 HTML_TAIL: """
+<div class="page_footer">
+</div>
 </div>
 </body>
 </html>
