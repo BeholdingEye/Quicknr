@@ -55,14 +55,15 @@ def page_style_link(text, i, CD):
     Imports stylesheet link(s) to matching .css file(s) for some pages - adapt to 
     your own needs
     
+    The two stylesheets used by default should be kept as they are relied upon
+    for news list & post styling
+    
     """
     import os
     # Values are lists, so that more than one stylesheet can import into a file
     pairsD = {
-                    "index.txt"     :   ["index.css"],
-                    "about.txt"     :   ["about.css"],
-                    "news.txt"      :   ["newslist.css"],
-                    "newspost"      :   ["newspost.css"]  } # Will catch any name
+                    "news.txt"      :   ["quicknr_base_newslist.css"],
+                    "newspost"      :   ["quicknr_base_newspost.css"]  } # Will catch any name
     pageMatch = os.path.basename(CD["sourceFilePath"])
     link = '<link rel="stylesheet" href="res/css/{}" type="text/css" />\n'
     # Alter the link for news posts
