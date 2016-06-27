@@ -1,0 +1,388 @@
+/*================================================================
+
+                QUICKNR STYLESHEET "BASE"
+                
+                            v1.0.0
+
+=================================================================*/
+
+
+/* ============================= FONTS ============================= */
+
+@font-face {
+/*
+    font-family: "fontname";
+    src: url("../font/fontname.woff") format("woff");
+*/
+}
+
+
+/* ============================= LAYOUT ============================= */
+
+/* Firefox outline fix */
+input[type="button"]::-moz-focus-inner {
+    outline: none;
+    border: none;
+}
+
+body {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: auto;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-width: 300px;
+    height: 100%;
+    font-family: Verdana,sans-serif;
+    font-size: 16px;
+    font-weight: normal;
+    font-style: normal;
+    font-stretch: normal;
+    color: white;
+    text-align: center;
+    vertical-align: top;
+    background-color: black;
+    
+    /* Font rendering settings from Google */
+    
+    /* Support for all WebKit browsers. */
+    -webkit-font-smoothing: antialiased;
+    /* Support for Safari and Chrome. */
+    text-rendering: optimizeLegibility;
+    /* Support for Firefox. */
+    -moz-osx-font-smoothing: grayscale;
+    /* Support for IE. */
+    font-feature-settings: "liga";
+}
+
+
+/* ----------------------------- CENTER ALIGN */
+div,
+h1.title,
+h2.heading {
+    text-align: center;
+}
+
+/* ----------------------------- LEFT ALIGN */
+p,
+ul, ol,
+dl, dt, dd {
+    text-align: left;
+}
+
+
+/* As a starting point, remove div margins and padding */
+div {
+    display: block;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+p {
+    display: block;
+    position: relative;
+    width: 100%;
+}
+
+
+/* Optional page-wrapper div, by default in head snippet */
+div.page {
+    background-color: gray;
+}
+
+/* Outermost div created by Quicknr */
+div.user_content {
+    display: inline-block;
+    padding: 0 3% 2em 3%;
+    width: 94%;
+    max-width: 800px;
+    color: black;
+    background-color: white;
+}
+
+/* ----------------------------- PAGE HEADER */
+
+/* Optional header, by default in head snippet */
+div.page_header {
+    height: 100px;
+    background-color: #333;
+}
+
+/* ----------------------------- PAGE FOOTER */
+
+/* Optional footer, by default in tail snippet */
+div.page_footer {
+    height: 100px;
+    background-color: #333;
+}
+
+/* ============================= TITLE ============================== */
+
+h1.title {
+    margin-left: 0.5em;
+    margin-right: 0.5em;
+    font-size: 1.4em;
+    color: #444;
+}
+
+/* ============================= HEADINGS =========================== */
+
+h2.heading {
+    margin-left: 0.5em;
+    margin-right: 0.5em;
+    margin-top: 1em;
+    font-size: 1.2em;
+    color: #444;
+}
+
+/* ============================= SECTIONS =========================== */
+
+div.headed_section {
+    clear: both;
+}
+div.section {
+    vertical-align: top;
+}
+
+/* ============================= NEWS DATE STAMP ==================== */
+
+p.news_date_stamp {
+    font-size: 0.9em;
+    font-style: italic;
+}
+
+/* ============================= NOTE BLOCKS ======================== */
+
+/* Div = codeblock, dl = others */
+div.codeblock,
+dl.dlblock {
+    display: inline-block;
+    position: relative;
+    margin: 1em 0 1em 0;
+    padding: 1em; /* Overriden below */
+    width: 86%;
+    text-align: left;
+    overflow: auto;
+    border-radius: 1em;
+}
+dl.dlblock {
+    padding-top: 1.5em;
+    overflow: visible;
+    background-color: #EEE;
+}
+
+/* Block title: Note/Warning etc. */
+dl.dlblock dt {
+    display: block;
+    position: absolute;
+    top: -0.7em;
+    left: 1.5em;
+    padding: 0.2em 0.5em 0.2em 0.5em;
+    border: solid 1px silver;
+    background-color: white;
+}
+
+/* Block text */
+dl.dlblock dd {
+    display: block;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+
+/* ----------------------------- Note & Example Blocks */
+
+dl.note,
+dl.example {
+    background-color: #DEF;
+}
+
+/* ----------------------------- Warning Block */
+
+dl.warning {
+    background-color: #FDD;
+}
+
+/* ----------------------------- Quote Block */
+
+dl.quote {
+    padding-top: 1em;
+    font-style: italic;
+    border: solid thin #CCC;
+    background-color: #FCFCFC;
+}
+
+/* Hide the "Quote" title */
+dl.quote dt {
+    display: none;
+}
+
+/* ----------------------------- Code Block */
+
+div.codeblock {
+    background-color: #DFD;
+}
+pre.code {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    font-size: 0.9em;
+    white-space: pre;
+    overflow: visible;
+}
+
+
+/* Monospaced text styled with ` backticks in text source */
+code {
+    padding-left: 0.2em;
+    padding-right: 0.2em;
+    background-color: #EEE;
+}
+
+/* ============================= IMAGES ============================= */
+
+img {
+    border: none;
+    width: 100%;
+}
+
+/* ----------------------------- Image Block */
+
+div.imgblock {
+    display: inline-block;
+    margin-top: 0.5em;
+    max-width: 95%;
+}
+
+/* ----------------------------- Image Float */
+
+div.imgfloat {
+    margin-bottom: 1em;
+}
+div.imgfloat.odd {
+    float: left;
+    margin-right: 1em;
+    max-width: 45%;
+    clear: right;   /* Clearing works with paragraphs below */
+}
+div.imgfloat.even {
+    float: right;
+    margin-left: 1em;
+    max-width: 45%;
+    clear: left;
+}
+
+/* ----------------------------- Text part of paragraph */
+
+p.img_p {
+    
+}
+div.imgfloat.odd + p.img_p {
+    clear: right;
+}
+div.imgfloat.even + p.img_p {
+    clear: left;
+}
+
+/* ----------------------------- Image Caption */
+
+p.imgcaption {
+    margin-top: 0.5em;
+    margin-bottom: 0.2em;
+    font-style: italic;
+    font-size: 0.9em;
+    text-align: center;
+}
+div.imgblock p.imgcaption {
+    
+}
+div.imgfloat p.imgcaption {
+    font-size: 0.8em;
+}
+
+
+/* ============================= LINKS ============================= */
+
+/* ----------------------------- Image serving as a clickable link */
+
+div.link_img {
+    
+}
+div.link_img:hover {
+    opacity: 0.9;
+}
+
+/* ----------------------------- Link Paragraph */
+
+p.link_p {
+    
+}
+
+/* ----------------------------- A Href & Javascript Span */
+
+a,
+span.js_call {
+    text-decoration: none;
+    font-weight: bold;
+    color: maroon;
+    outline: none;
+}
+a:hover,
+span.js_call:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+
+/* ============================= LISTS ============================== */
+
+/* ----------------------------- Unordered List */
+
+ul {
+    
+}
+ul li {
+    
+}
+
+/* ----------------------------- Ordered List */
+
+ol {
+    
+}
+ol li {
+    
+}
+
+/* ============================= YOUTUBE VIDEO ====================== */
+
+div.ytvideo {
+    display: inline-block;
+    margin-top: 0.5em;
+    width: 560px;
+    height: 315px;
+    max-width: 95%;
+}
+div.ytvideo iframe {
+    display: block;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+
+@media (max-width: 500px) {
+    body {
+        font-size: 14px;
+    }
+    div.ytvideo {
+        height: 240px;
+    }
+}
