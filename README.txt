@@ -27,6 +27,22 @@ Windows, Mac and Linux.
 
 CHANGELOG
 
+Version 1.9.0 - 27 June 2016
+
+* Quicknr now includes a "templates" folder, containing the "base" set 
+    of 3 CSS files that are copied to new websites. This serves as a 
+    starting point for customisation, exposing all generated classes.
+* Default Head and Tail snippets in configuration now include empty 
+    page header and footer, ready for content.
+* The sample custom Python directive "page_style_link" is now actually 
+    used in support of new CSS files and is in the Head snippet.
+* News item thumbnails on news listing page now load as background 
+    images of their container, making them easier to style with CSS.
+* Default "More..." link on news listing page changed to "More>" in 
+    the configuration to avoid repetition of any preceding "...".
+* Improved handling of import and Python directives in source files.
+* A few other minor improvements and fixes.
+
 Version 1.8.0 - 19 June 2016
 
 * News listing page now features a "Load More" Javascript button for 
