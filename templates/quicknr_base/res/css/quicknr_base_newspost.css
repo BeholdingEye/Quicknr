@@ -1,0 +1,63 @@
+/*================================================================
+
+                QUICKNR STYLESHEET "BASE NEWS POST"
+                
+                            v1.0.0
+
+=================================================================*/
+
+
+/* ----------------------------- Intro Paragraph */
+
+p.p_1.section_0 {
+    font-weight: bold;
+}
+
+/* ----------------------------- Publication Date */
+
+p.news_date_stamp {
+    color: gray;
+    font-size: 0.8em;
+}
+p.news_date_stamp::before {
+    content: "Published on ";
+}
+
+/* ============================= NEWS LINKS ========================= */
+
+div.news_links {
+    padding: 1em 0 1em 0; /* Matched by position of prev/next link below */
+    font-family: Arial,sans-serif;
+    text-align: center;
+    vertical-align: top;
+}
+span.listing_link,
+span.prev_link,
+span.next_link {
+    display: block;
+    position: absolute;
+    top: 0;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+span.listing_link {
+    display: inline-block;
+    position: relative;
+    margin: 0 auto 0 auto;
+}
+span.prev_link {
+    left: 0;
+    top: 1em;
+    text-align: left;
+}
+span.next_link {
+    right: 0;
+    top: 1em;
+    text-align: right;
+}
+div.news_links a {
+    padding: 1em;
+    font-weight: normal;
+    font-style: normal;
+}

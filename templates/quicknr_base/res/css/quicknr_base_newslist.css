@@ -1,0 +1,122 @@
+/*================================================================
+
+                QUICKNR STYLESHEET "BASE NEWS LIST"
+                
+                            v1.0.0
+
+=================================================================*/
+
+
+/* ============================= SECTIONS =========================== */
+
+div.headed_section {
+    padding-top: 0.1em;
+}
+/* Correct first item, removing excessive space under title */
+div.headed_section.section_1 {
+    padding-top: 0;
+}
+
+div.section {
+    margin-top: 0.5em;
+    margin-left: 5%;
+    margin-right: 5%;
+    width: 90%;
+}
+div.section p {
+    margin-top: 0;
+}
+
+
+/* ============================= HEADINGS =========================== */
+
+h2.heading {
+    margin-left: 5%;
+    margin-right: 5%;
+    margin-bottom: 0;
+    text-align: left;
+} 
+
+/* ----------------------------- Publication date */
+
+h2.heading span {
+    display: block;
+    position: relative;
+    left: -4%;
+    margin-bottom: 0.5em;
+    font-size: 0.7em;
+    font-weight: normal;
+    color: gray;
+}
+
+
+/* ============================= IMAGES ============================= */
+
+/* Background-image used in news.txt, instead of <img> */
+div.imgfloat {
+    float: left;
+    margin-right: 1em;
+    margin-bottom: 0.5em;
+    width: 80px;
+    height: 80px;
+    overflow: hidden;
+    border-radius: 10px;
+    background-color: gray;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: 50% 50%;
+    z-index: 1;
+}
+
+/* Linking from image float, <a> or JS <span>, expand to cover div */
+div.imgfloat a,
+div.imgfloat span {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+
+/* ============================= LINKS ============================= */
+
+/* ----------------------------- "More>" link to news post */
+
+div.section p a {
+    font-weight: normal;
+    font-style: italic;
+}
+
+/* ----------------------------- Javascript "Load More" Button */
+
+div#NewsLoaderBlock {
+    padding-top: 2em;
+    padding-bottom: 2em;
+    vertical-align: top;
+    clear:both;
+}
+span#LoadMoreNewsBtn {
+    display: inline-block;
+    position: relative;
+    margin: 0;
+    padding: 0.3em 1em 0.3em 1em;
+    font-size: 1em;
+    font-family: Arial, sans-serif;
+    font-weight: normal;
+    text-align: center;
+    text-transform: none;
+    vertical-align: middle;
+    color: #444;
+    cursor: pointer;
+    outline: none;
+    border-radius: 4px;
+    background-color: #DDD;
+}
+span#LoadMoreNewsBtn:hover {
+    color: #888;
+    background-color: #EEE;
+}
+span#LoadMoreNewsBtn:active {
+    top: 1px;
+    left: 1px;
+}
