@@ -18,7 +18,7 @@ function rangeToPercent(number, min, max) {
     return ((number - min) / (max - min)) * 100;
 }
 
-// ----------------------- Position function
+// ----------------------- Position functions
 
 // Returns Y position of element, with given offset
 function GetYPos(elem, offsetPos) {
@@ -26,6 +26,17 @@ function GetYPos(elem, offsetPos) {
     if (elem.offsetParent) {
         do {
             oPos += elem.offsetTop;
+        } while (elem = elem.offsetParent);
+    }
+    return oPos;
+}
+
+// Returns X position of element, with given offset
+function GetXPos(elem, offsetPos) {
+    oPos = offsetPos;
+    if (elem.offsetParent) {
+        do {
+            oPos += elem.offsetLeft;
         } while (elem = elem.offsetParent);
     }
     return oPos;
@@ -63,7 +74,7 @@ function objHtml() {
     return document.documentElement;
 }
 
-function objClass(name, parent=null) {
+function objClass(name, parent) {
     if (!parent) {
         return document.getElementsByClassName(name)[0];
     }
@@ -72,7 +83,7 @@ function objClass(name, parent=null) {
     }
 }
 
-function objID(id, parent=null) {
+function objID(id, parent) {
     if (!parent) {
         return document.getElementById(id);
     }
@@ -82,7 +93,7 @@ function objID(id, parent=null) {
     
 }
 
-function objTag(tag, parent=null) {
+function objTag(tag, parent) {
     if (!parent) {
         return document.getElementsByTagName(tag)[0];
     }
