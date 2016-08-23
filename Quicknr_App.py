@@ -141,6 +141,7 @@ def Quicknr():
                     FTP_PASSWORD = "",
                     FTP_ACCT = "",
                     FTP_DEBUG = "0",
+                    FTP_PASSIVE = "YES",
                     ALWAYS_XHTML_TAGS = "NO",
                     FILE_SIZE_LIMIT = True,
                     siteDir = "", # Path
@@ -643,6 +644,7 @@ def Quicknr():
         if CD["DEBUG_ERRORS"] not in ["YES","NO"]: _ve("DEBUG_ERRORS")
         # Leave out server values
         if CD["FTP_DEBUG"] not in ["0","1","2"]: _ve("FTP_DEBUG")
+        if CD["FTP_PASSIVE"] not in ["YES","NO"]: _ve("FTP_PASSIVE")
         if CD["ALWAYS_XHTML_TAGS"] not in ["YES","NO"]: _ve("ALWAYS_XHTML_TAGS")
         if CD["FILE_SIZE_LIMIT"] not in [True, False]: _ve("FILE_SIZE_LIMIT")
     
@@ -734,6 +736,8 @@ def Quicknr():
             CD["FTP_ACCT"] = re.search(r"(?m)^FTP_ACCT:"+rP,cT).group(1)
         if re.search(r"(?m)^FTP_DEBUG:",cT):
             CD["FTP_DEBUG"] = re.search(r"(?m)^FTP_DEBUG:"+rP,cT).group(1)
+        if re.search(r"(?m)^FTP_PASSIVE:",cT):
+            CD["FTP_PASSIVE"] = re.search(r"(?m)^FTP_PASSIVE:"+rP,cT).group(1)
         if re.search(r"(?m)^ALWAYS_XHTML_TAGS:",cT):
             CD["ALWAYS_XHTML_TAGS"] = re.search(r"(?m)^ALWAYS_XHTML_TAGS:"+rP,cT).group(1)
         os.chdir(prevCWD)
@@ -2055,6 +2059,8 @@ def Quicknr():
         try:
             with ftp.FTP(CD["FTP_SERVER"],CD["FTP_USERNAME"],CD["FTP_PASSWORD"],CD["FTP_ACCT"]) as fc:
                 # --------------------- Start FTP connection
+                if CD["FTP_PASSIVE"] == "NO":
+                    fc.set_pasv(False) # Active mode
                 if CD["FTP_DEBUG"] == "1" or CD["FTP_DEBUG"] == "2":
                     fc.set_debuglevel(int(CD["FTP_DEBUG"]))
                 print("\n"+fc.getwelcome())
