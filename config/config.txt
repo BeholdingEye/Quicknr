@@ -331,6 +331,8 @@ JAVASCRIPT_LINK_POST: ""
 #  verbosity, or 2 for full output (not recommended). The default      #
 #  value is 0, the recommended setting.                                #
 #                                                                      #
+#  FTP_PASSIVE enables passive mode, change to NO for active.          #
+#                                                                      #
 #  FTP functionality of Quicknr may fail with unusual server setups.   #
 #                                                                      #
 FTP_SERVER: ""
@@ -339,6 +341,7 @@ FTP_PASSWORD: ""
 FTP_PATH: ""
 FTP_ACCT: ""
 FTP_DEBUG: "0"
+FTP_PASSIVE: YES
 
 ########################################################################
 #                                                                      #
