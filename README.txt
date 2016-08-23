@@ -27,6 +27,13 @@ Windows, Mac and Linux.
 
 CHANGELOG
 
+Version 2.0.0 - 23 August 2016
+
+* FTP can now be configured for active or passive connection with the 
+    new FTP_PASSIVE configuration setting.
+* The "lib.js" file that is copied to new websites has been fixed; it 
+    previously contained code compatible only with Firefox and Chrome.
+
 Version 1.9.0 - 27 June 2016
 
 * Quicknr now includes a "templates" folder, containing the "base" set 
