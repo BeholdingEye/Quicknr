@@ -10,7 +10,7 @@
 #                       from plain text sources                        #
 #                                                                      #
 #                                                                      #
-#                            Version 1.9.0                             #
+#                            Version 2.0.0                             #
 #                                                                      #
 #            Copyright 2016 Karl Dolenc, beholdingeye.com.             #
 #                         All rights reserved.                         #
@@ -95,7 +95,7 @@ def Quicknr():
     
     """
     
-    print("\n===================== QUICKNR 1.9.0 =====================\n")
+    print("\n===================== QUICKNR 2.0.0 =====================\n")
     
     # --------------------- App defaults
     
