@@ -44,16 +44,10 @@ function GetXPos(elem, offsetPos) {
 
 // ----------------------- Image preloader
 
-function LoadImagesIntoMemory(args) {
-    // args == [destination HTML filename, list of image URLs, start index in list]
-    var htmlFilename    = args[0];
-    var imgList         = args[1];
-    var startIndex      = args[2];
-    if (wFilename == htmlFilename) {
-        for (var i = startIndex; i < imgList.length; i++) {
-            var img = new Image();
-            img.src = imgList[i];
-        }
+function LoadImagesIntoMemory(imgList) {
+    for (var i = 0; i < imgList.length; i++) {
+        var img = new Image();
+        img.src = imgList[i];
     }
 }
 
