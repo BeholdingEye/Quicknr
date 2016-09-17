@@ -27,6 +27,11 @@ Windows, Mac and Linux.
 
 CHANGELOG
 
+Version 2.0.1 - 17 September 2016
+
+Small correction and simplification of the image preloading Javascript
+    function in lib.js.
+
 Version 2.0.0 - 23 August 2016
 
 * FTP can now be configured for active or passive connection with the 
