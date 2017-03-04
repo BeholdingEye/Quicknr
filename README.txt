@@ -6,13 +6,12 @@
 Fast and powerful Python application for the making and updating of 
 websites from plain text sources.
 
-Quicknr is Copyright 2016 Karl Dolenc, beholdingeye.com. 
+Quicknr is Copyright 2017 Karl Dolenc, beholdingeye.com. 
 All rights reserved.
 
 Licensed under the GPL License as open source, free software.
 
-Documentation and a growing collection of extras for Quicknr can be 
-found here:
+Basic documentation for Quicknr can be found here:
 
 http://www.beholdingeye.com/quicknr
 
@@ -26,6 +25,11 @@ Windows, Mac and Linux.
 
 
 CHANGELOG
+
+Version 2.0.2 - 4 March 2017
+
+Correction to handling of YouTube links, and a couple of utility 
+    functions added in lib.js.
 
 Version 2.0.1 - 17 September 2016
 

@@ -10,7 +10,7 @@
 #                       from plain text sources                        #
 #                                                                      #
 #                                                                      #
-#                            Version 2.0.1                             #
+#                            Version 2.0.2                             #
 #                                                                      #
 #            Copyright 2016 Karl Dolenc, beholdingeye.com.             #
 #                         All rights reserved.                         #
@@ -95,7 +95,7 @@ def Quicknr():
     
     """
     
-    print("\n===================== QUICKNR 2.0.1 =====================\n")
+    print("\n===================== QUICKNR 2.0.2 =====================\n")
     
     # --------------------- App defaults
     
@@ -988,7 +988,7 @@ def Quicknr():
             Return link type of text: link, image, YTvideo
             
             """
-            if "youtube" in sT.lower() or "youtu.be" in sT.lower(): return "YTvideo"
+            if "youtube.com" in sT.lower() or "youtu.be" in sT.lower(): return "YTvideo"
             for x in [".jpg",".png",".gif",".svg"]:
                 if sT.lower().endswith(x) or sT.split("Quicknr?=IL=?Quicknr")[0].lower().endswith(x):
                     return "image"
@@ -1884,7 +1884,7 @@ def Quicknr():
             # --------------------- If this was a news post, list in "news.txt"
             if os.path.split(os.path.dirname(fxNC))[1] == "news":
                 # Construct news listing item; linked heading and a para: title, img & intro
-                nhMore = "&nbsp;["+CD["NEWS_MORE_PHRASE"]+" "+nhPath+"]"
+                nhMore = " ["+CD["NEWS_MORE_PHRASE"]+" "+nhPath+"]"
                 # If no intro, save news list from breakdown with link
                 if not nhFP: nhMore = "&nbsp;["+"Read the article"+" "+nhPath+"]"
                 nhNItem = "   _"+dDS+"_ ["+nhTitle+" "+nhPath+"]\n\n"+\

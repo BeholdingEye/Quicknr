@@ -77,6 +77,15 @@ function objClass(name, parent) {
     }
 }
 
+function classObjs(name, parent) {
+    if (!parent) {
+        return document.getElementsByClassName(name);
+    }
+    else {
+        return parent.getElementsByClassName(name);
+    }
+}
+
 function objID(id, parent) {
     if (!parent) {
         return document.getElementById(id);
@@ -95,3 +104,13 @@ function objTag(tag, parent) {
         return parent.getElementsByTagName(tag)[0];
     }
 }
+
+function tagObjs(tag, parent) {
+    if (!parent) {
+        return document.getElementsByTagName(tag);
+    }
+    else {
+        return parent.getElementsByTagName(tag);
+    }
+}
+
